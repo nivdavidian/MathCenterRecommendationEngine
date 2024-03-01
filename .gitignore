@@ -1,0 +1,4 @@
+my-server/node_modules
+venv
+*.json
+*.csv
