@@ -3,7 +3,7 @@ import datetime
 import threading
 import time
 
-MAX_CONNECTIONS = 10
+MAX_CONNECTIONS = 15
 lock = threading.Lock()
 # Set the database credentials
 host = 'database-1.cxs6kmykemnz.eu-north-1.rds.amazonaws.com'

@@ -1,12 +1,5 @@
-import pymysql
 import datetime
 import sql_pool
-# Set the database credentials
-host = 'database-1.cxs6kmykemnz.eu-north-1.rds.amazonaws.com'
-port = 3306
-user = 'admin'
-password = 'jStDcRULtS9CcYh'
-database = 'mathCenterDB'
 
 # Connect to the database
 connection = sql_pool.get_connection()
@@ -109,7 +102,7 @@ def get_all_worksheet_grades():
 def get_worksheet_grades_by_country_lang(c_code, l_code):
     conn = sql_pool.get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT page_uid FROM worksheet_grades WHERE country_code = (%s) AND language_code = (%s)", (c_code, l_code))
+    cursor.execute("SELECT page_uid, country_code, language_code FROM worksheet_grades WHERE country_code = (%s) AND language_code = (%s)", (c_code, l_code))
     res = cursor.fetchall()
     cursor.close()
     sql_pool.release_connection(conn)
@@ -123,7 +116,19 @@ def get_distinct_country_lang():
     cursor.close()
     sql_pool.release_connection(conn)
     return res
+
+def get_worksheets_page(page=1):
+    per_page = 100  # Number of worksheets per page
     
+    conn = sql_pool.get_connection()
+    cursor = conn.cursor()
+    offset = (page - 1) * per_page  # Calculate offset based on page number
+    cursor.execute("SELECT * FROM worksheet_data LIMIT (%s) OFFSET (%s)", (per_page, offset))
+    res = cursor.fetchall()
+    cursor.close()
+    sql_pool.release_connection(conn)
+    
+    return res
 
 # t = datetime.datetime.now()
 # print(get_page_topics_by_uid(["0038d295", "002fa1e4", "7b9d14c7"]))
