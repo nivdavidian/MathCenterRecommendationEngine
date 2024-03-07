@@ -1,5 +1,6 @@
 import datetime
 import sql_pool
+import pandas as pd
 
 # Connect to the database
 connection = sql_pool.get_connection()
@@ -39,18 +40,41 @@ cursor.execute("""CREATE TABLE IF NOT EXISTS worksheet_grades(
     max_grade VARCHAR(20)
     );""")
 
+cursor.execute("""CREATE TABLE IF NOT EXISTS worksheet_titles(
+    uid VARCHAR(255),
+    language_code VARCHAR(5),
+    title VARCHAR(255),
+    PRIMARY KEY (uid, language_code)
+    );""")
+
+connection.commit()
+
+# df = pd.read_excel("/Users/nivdavidian/Downloads/Worksheet titles.xlsx", sheet_name='Sheet1')
+
+# i=0
+# step = 5000
+# t = True
+# while(t):
+#     if i==(len(df["language_code"])+1):
+#         t = False
+#     tps = [tuple(x) for x in df.iloc[i:(i+step)].to_numpy()]
+#     cursor.executemany("INSERT INTO worksheet_titles (uid, language_code, title) VALUES (%s, %s, %s)", tps)
+#     i = min((i+step), (len(df)+1))
+    
+# connection.commit()
+
 cursor.close()
 sql_pool.release_connection(connection)
 
 def get_page_topics_by_uid(pages_uid):
     sql = "SELECT * FROM topics WHERE worksheet_uid IN (%s)"
-    place_holders = ", ".join(["%s"]*len(pages_uid))
+    place_holders = ", ".join(f"\'{uid}\'"for uid in pages_uid)
     sql = sql % place_holders
     
     conn = sql_pool.get_connection()
     cursor = conn.cursor()
     
-    cursor.execute(sql, tuple(pages_uid))
+    cursor.execute(sql)
     res = cursor.fetchall()
     
     cursor.close()
@@ -59,7 +83,7 @@ def get_page_topics_by_uid(pages_uid):
 
 def get_pages_by_topics(topics):
     sql = "SELECT * FROM topics WHERE topic IN (%s)"
-    place_holders = ", ".join(["%s"]*len(topics))
+    place_holders = ", ".join(topics)
     sql = sql % place_holders
     
     conn = sql_pool.get_connection()
@@ -117,21 +141,52 @@ def get_distinct_country_lang():
     sql_pool.release_connection(conn)
     return res
 
-def get_worksheets_page(page=1):
+def get_worksheets_page(language, country, page=1):
     per_page = 100  # Number of worksheets per page
     
     conn = sql_pool.get_connection()
     cursor = conn.cursor()
+    
+    
     offset = (page - 1) * per_page  # Calculate offset based on page number
-    cursor.execute("SELECT * FROM worksheet_data LIMIT (%s) OFFSET (%s)", (per_page, offset))
+    cursor.execute("""SELECT uid, title
+                   FROM worksheet_titles JOIN worksheet_grades
+                   ON worksheet_titles.uid = worksheet_grades.page_uid AND worksheet_titles.language_code = worksheet_grades.language_code
+                   WHERE worksheet_titles.language_code = (%s) AND worksheet_grades.country_code = (%s) LIMIT %s OFFSET %s""", (language, country, per_page, offset))
+    
     res = cursor.fetchall()
     cursor.close()
     sql_pool.release_connection(conn)
     
     return res
 
-# t = datetime.datetime.now()
-# print(get_page_topics_by_uid(["0038d295", "002fa1e4", "7b9d14c7"]))
-# print(datetime.datetime.now()-t)
+def get_page(search_string, l_code="he"):
+    conn = sql_pool.get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""SELECT uid, title FROM worksheet_titles
+                   WHERE uid = (%s) AND language_code = (%s)
+                   """, (search_string, l_code))
+    
+    res = cursor.fetchall()
+    if res == None:
+        res = []
+    
+    cursor.close()
+    sql_pool.release_connection(conn)
+    return res
 
-# connection.close()
+def get_recommendations_for_worksheet(worksheet_uid, l_code, c_code):
+    
+    df = pd.read_csv(f"./top_10_by_country_files/top_10_{l_code}-{c_code}.csv")
+    df.index = df["worksheet_uid"]
+    
+    res = df.loc[worksheet_uid, "top_10"]
+    return res
+    
+
+
+
+# t = datetime.datetime.now()
+# get_worksheets_page("he", "IL")
+# print(datetime.datetime.now()-t)
+# sql_pool.close_conncections()
