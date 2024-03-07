@@ -75,7 +75,7 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
-reui/build
+build/
 
 # Symbolication related
 app.*.symbols
