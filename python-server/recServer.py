@@ -1,4 +1,5 @@
 import dbAPI
+import datetime
 from flask import Flask, request, jsonify, abort
 from flask_cors import CORS
 import service
@@ -45,14 +46,15 @@ def get_page():
     
 @app.route("/getrecommendation")
 def get_recommendation():
+    t = datetime.datetime.now()
     try:
         worksheet_uid = request.args.get("worksheet_uid")
         rec = service.recommend(worksheet_uid)
-        print(rec)
     except Exception as e:
         app.logger.error(e)
         return abort(500, "Error")
     
+    app.logger.debug(f"recommend lag: {datetime.datetime.now()-t}")
     return jsonify(rec)
         
 

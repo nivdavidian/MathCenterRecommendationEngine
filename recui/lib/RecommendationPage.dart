@@ -60,8 +60,7 @@ class _RecommendationPageState extends State<RecommendationPage> {
                           width: 300,
                           height: 50,
                           child: SelectableText(
-                              // '${recommendations[index]["worksheet_name"]} (${recommendations[index]["worksheet_id"]})'),
-                              '${recommendations[index]}'),
+                              '${recommendations[index]["worksheet_name"]} (${recommendations[index]["worksheet_uid"]})'),
                         ),
                       ),
                     ),

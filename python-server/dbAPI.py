@@ -176,11 +176,28 @@ def get_page(search_string, l_code="he"):
     return res
 
 def get_recommendations_for_worksheet(worksheet_uid, l_code, c_code):
-    
-    df = pd.read_csv(f"./top_10_by_country_files/top_10_{l_code}-{c_code}.csv")
+    df = pd.read_parquet(f"./top_200_by_country_files/top_200_{l_code}-{c_code}.parquet")
     df.index = df["worksheet_uid"]
     
     res = df.loc[worksheet_uid, "top_10"]
+    return res
+
+def get_pages(worksheet_uids, l_code="he"):
+    conn = sql_pool.get_connection()
+    cursor = conn.cursor()
+    
+    sql = "SELECT uid, title FROM worksheet_titles WHERE uid IN (%s) AND language_code = "
+    place_holders = ",".join(f"\'{uid}\'"for uid in worksheet_uids)
+    sql = sql % place_holders
+    sql = sql + "(%s)"
+    cursor.execute(sql, (l_code,))
+    
+    res = cursor.fetchall()
+    if res == None:
+        res = []
+    
+    cursor.close()
+    sql_pool.release_connection(conn)
     return res
     
 
