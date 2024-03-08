@@ -5,26 +5,19 @@ import time
 import os
 from dotenv import load_dotenv
 
-load_dotenv(dotenv_path="/Users/nivdavidian/MathCenterRecommendationEngine/python-server/dbenv.env")
+load_dotenv("/Users/nivdavidian/MathCenterRecommendationEngine/python-server/dbenv.env")
 
-host="mathcenterinstance.cxs6kmykemnz.eu-north-1.rds.amazonaws.com"
-port=3306
-user="admin"
-password="gencIb-kyqtoj-7cigty"
-database="mathCenterDB"
-
-# host = os.getenv("HOST")
-# port = int(os.getenv("PORT"))
-# user = os.getenv("USER")
-# password = os.getenv("PASSWORD")
-# database = os.getenv("DATABASE")
-
-# print(host)
+# Set the database credentials
+HOST = os.environ.get("HOST")
+PORT = int(os.environ.get("PORT"))
+USER = os.environ.get("MYSQL_USER")
+PASSWORD = os.environ.get("PASSWORD")
+DATABASE = os.environ.get("DATABASE")
 
 MAX_CONNECTIONS = 1
 lock = threading.Lock()
 
-free_connections = [pymysql.connect(host=host, port=port, user=user, password=password, database=database) for _ in range(MAX_CONNECTIONS)]
+free_connections = [pymysql.connect(host=HOST, port=PORT, user=USER, password=PASSWORD, database=DATABASE) for _ in range(MAX_CONNECTIONS)]
 busy_connections = []
 
 def get_connection():

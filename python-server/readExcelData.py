@@ -1,20 +1,25 @@
 import pymysql
 import pandas as pd
+import os
+from dotenv import load_dotenv
+
+
+load_dotenv("/Users/nivdavidian/MathCenterRecommendationEngine/python-server/dbenv.env")
 
 # Set the database credentials
-host = ''
-port = 0
-user = ''
-password = ''
-database = ''
+HOST = os.environ.get("HOST")
+PORT = int(os.environ.get("PORT"))
+USER = os.environ.get("MYSQL_USER")
+PASSWORD = os.environ.get("PASSWORD")
+DATABASE = os.environ.get("DATABASE")
 
 # Connect to the database
 connection = pymysql.connect(
-    host=host,
-    port=port,
-    user=user,
-    password=password,
-    database=database
+    host=HOST,
+    port=PORT,
+    user=USER,
+    password=PASSWORD,
+    database=DATABASE
 )
 
 # Create a cursor object
@@ -25,7 +30,7 @@ cursor = connection.cursor()
 # cursor.execute("DROP TABLE user_downloads;")
 # cursor.execute("DROP TABLE worksheet_grades;")
 # cursor.execute("DROP TABLE user_interactive_sets;")
-connection.commit()
+# connection.commit()
 
 cursor.execute("""CREATE TABLE IF NOT EXISTS topics(
     worksheet_uid VARCHAR(255),
@@ -39,13 +44,6 @@ cursor.execute("""CREATE TABLE IF NOT EXISTS user_downloads(
     language_code VARCHAR(5),
     downloads TEXT
     );""")
-
-# cursor.execute("""CREATE TABLE IF NOT EXISTS other_user_downloads(
-#     user_id INT AUTO_INCREMENT PRIMARY KEY,
-#     country_code VARCHAR(5),
-#     language_code VARCHAR(5),
-#     page_uid VARCHAR
-#     );""")
 
 cursor.execute("""CREATE TABLE IF NOT EXISTS worksheet_grades(
     country_code VARCHAR(5),
@@ -79,9 +77,9 @@ connection.commit()
     
 # connection.commit()
 
-# cursor.execute("SELECT COUNT(*) FROM user_downloads")
-# res = cursor.fetchall()
-# print(res)
+cursor.execute("SELECT COUNT(*) FROM user_downloads")
+res = cursor.fetchall()
+print(res)
 # df = pd.DataFrame(res, columns=["user_uid", "country_code", "language_code", "downloads"])
 
 # print(df["dowloads"])
