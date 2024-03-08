@@ -2,7 +2,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:recui/HomePage.dart';
 import 'dart:convert';
+import 'package:url_launcher/url_launcher.dart';
 
 class RecommendationPage extends StatefulWidget {
   const RecommendationPage({super.key, required this.data});
@@ -16,6 +18,20 @@ class _RecommendationPageState extends State<RecommendationPage> {
   bool isLoading = true;
   dynamic recommendations;
 
+  Future<void> redirectToUrl(String worksheetUid) async {
+    final String worksheetUriString =
+        "https://math-center.org/he-IL/worksheet/$worksheetUid/%D7%97%D7%99%D7%91%D7%95%D7%A8-%D7%95%D7%97%D7%99%D7%A1%D7%95%D7%A8-%D7%A2%D7%93-10-%D7%93%D7%A3-%D7%9E%D7%A1%D7%A4%D7%A8-1/";
+    final String interactiveUriString =
+        "https://math-center.org/he-IL/worksheet/$worksheetUid/interactive/";
+    final Uri worksheetUri = Uri.parse(worksheetUriString);
+    if (!await launchUrl(worksheetUri)) {
+      final Uri interactiveUri = Uri.parse(interactiveUriString);
+      if (!await launchUrl(interactiveUri)) {
+        print("something went wrong not interactive and not worksheet");
+      }
+    }
+  }
+
   Future<void> recommend(String worksheetUid) async {
     var url = Uri.parse(
         'http://127.0.0.1:5000/getrecommendation?worksheet_uid=$worksheetUid');
@@ -24,7 +40,6 @@ class _RecommendationPageState extends State<RecommendationPage> {
     if (response.statusCode == 200) {
       // If the server returns a 200 OK response, then parse the JSON.
       var data = json.decode(response.body);
-      print(data);
       setState(() {
         isLoading = false;
         recommendations = data;
@@ -53,17 +68,10 @@ class _RecommendationPageState extends State<RecommendationPage> {
                 children: [
                   ...List.generate(
                     recommendations.length,
-                    (index) => Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Center(
-                        child: Container(
-                          width: 300,
-                          height: 50,
-                          child: SelectableText(
-                              '${recommendations[index]["worksheet_name"]} (${recommendations[index]["worksheet_uid"]})'),
-                        ),
-                      ),
-                    ),
+                    (index) => MyBorderButton(data: [
+                      recommendations[index]["worksheet_uid"],
+                      recommendations[index]["worksheet_name"],
+                    ], width: 400, height: 55, onTap: redirectToUrl),
                   ),
                 ],
               ),

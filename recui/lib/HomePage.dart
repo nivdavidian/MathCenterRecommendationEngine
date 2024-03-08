@@ -139,7 +139,15 @@ class _HomePageState extends State<HomePage> {
                                         MaterialPageRoute(
                                             builder: (context) =>
                                                 RecommendationPage(
-                                                  data: {"worksheet_id": _data[index]["worksheet_id"].toString(), "worksheet_name": _data[index]["worksheet_name"].toString()},
+                                                  data: {
+                                                    "worksheet_id": _data[index]
+                                                            ["worksheet_id"]
+                                                        .toString(),
+                                                    "worksheet_name": _data[
+                                                                index]
+                                                            ["worksheet_name"]
+                                                        .toString()
+                                                  },
                                                 )));
                                   },
                                   splashColor: Colors.purple[50],
@@ -157,6 +165,46 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
         ],
+      ),
+    );
+  }
+}
+
+class MyBorderButton extends StatelessWidget {
+  final List<String> data;
+  final double width;
+  final double height;
+  final Function onTap;
+  const MyBorderButton(
+      {super.key,
+      required this.data,
+      required this.width,
+      required this.height,
+      required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Container(
+        width: width,
+        height: height,
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.black, width: 1),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: InkWell(
+          onTap: () {
+            onTap(data[0]);
+          },
+          splashColor: Colors.purple[50],
+          child: Column(
+            children: [
+              SelectableText(data[1].toString()),
+              SelectableText(data[0].toString()),
+            ],
+          ),
+        ),
       ),
     );
   }
