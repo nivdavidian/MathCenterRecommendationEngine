@@ -2,11 +2,11 @@ import pymysql
 import pandas as pd
 
 # Set the database credentials
-host = 'database-1.cxs6kmykemnz.eu-north-1.rds.amazonaws.com'
-port = 3306
-user = 'admin'
-password = 'jStDcRULtS9CcYh'
-database = 'mathCenterDB'
+host = ''
+port = 0
+user = ''
+password = ''
+database = ''
 
 # Connect to the database
 connection = pymysql.connect(
@@ -22,8 +22,11 @@ cursor = connection.cursor()
 
 # Execute a SQL query
 # cursor.execute("DROP TABLE topics;")
-# cursor.execute("DROP TABLE downloads;")
+# cursor.execute("DROP TABLE user_downloads;")
 # cursor.execute("DROP TABLE worksheet_grades;")
+# cursor.execute("DROP TABLE user_interactive_sets;")
+connection.commit()
+
 cursor.execute("""CREATE TABLE IF NOT EXISTS topics(
     worksheet_uid VARCHAR(255),
     topic VARCHAR(255),
@@ -51,16 +54,18 @@ cursor.execute("""CREATE TABLE IF NOT EXISTS worksheet_grades(
     min_grade VARCHAR(20),
     max_grade VARCHAR(20)
     );""")
+
+cursor.execute("""CREATE TABLE IF NOT EXISTS user_interactive_sets(
+    user_uid VARCHAR(255),
+    worksheet_template_uid VARCHAR(255),
+    language_code VARCHAR(5),
+    country_code VARCHAR(5),
+    started_at VARCHAR(255)
+    );""")
 # Fetch the results
 connection.commit()
 
-cursor.execute("SELECT * FROM user_downloads")
-res = cursor.fetchall()
-print(len(res))
-df = pd.DataFrame(res, columns=["user_uid", "country_code", "language_code", "downloads"])
-
-# print(df["dowloads"])
-# df = pd.read_excel("/Users/nivdavidian/Downloads/BGU_Project_data.xlsx", sheet_name='User worksheets download')
+# df = pd.read_csv("/Users/nivdavidian/Downloads/BGU Project data 28.2.24 - User worksheets download.csv")
 
 # i=0
 # step = 5000
@@ -69,10 +74,17 @@ df = pd.DataFrame(res, columns=["user_uid", "country_code", "language_code", "do
 #     if i==(len(df["language_code"])+1):
 #         t = False
 #     tps = [tuple(x) for x in df.iloc[i:(i+step)].to_numpy()]
-#     cursor.executemany("INSERT INTO user_downloads (country_code, language_code, downloads) VALUES (%s, %s, %s)", tps)
+#     cursor.executemany("INSERT INTO user_downloads (language_code, country_code, downloads) VALUES (%s, %s, %s)", tps)
 #     i = min((i+step), (len(df)+1))
     
 # connection.commit()
+
+# cursor.execute("SELECT COUNT(*) FROM user_downloads")
+# res = cursor.fetchall()
+# print(res)
+# df = pd.DataFrame(res, columns=["user_uid", "country_code", "language_code", "downloads"])
+
+# print(df["dowloads"])
 
 
 
