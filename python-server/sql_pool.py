@@ -35,6 +35,7 @@ def get_connection():
             time.sleep(SLEEP_TIME)
             continue
         conn = None
+        create_conn = False
         with lock:
             if conn_queue.empty() and overflow <= 0:
                 time.sleep(SLEEP_TIME)
@@ -43,9 +44,14 @@ def get_connection():
                 conn = conn_queue.get_nowait()
             else:
                 overflow -= 1
-                conn = create_connection()
+                create_conn = True
+                
+        if create_conn:
+            conn = create_connection()
+            
         if conn is None:
             continue
+        
         return conn          
 
 def release_connection(conn):
