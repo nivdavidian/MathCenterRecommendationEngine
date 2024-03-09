@@ -3,6 +3,7 @@ import datetime
 import threading
 import time
 import os
+import queue
 from dotenv import load_dotenv
 
 load_dotenv("/Users/nivdavidian/MathCenterRecommendationEngine/python-server/dbenv.env")
@@ -14,39 +15,59 @@ USER = os.environ.get("MYSQL_USER")
 PASSWORD = os.environ.get("PASSWORD")
 DATABASE = os.environ.get("DATABASE")
 
-MAX_CONNECTIONS = 1
+
 lock = threading.Lock()
 
-free_connections = [pymysql.connect(host=HOST, port=PORT, user=USER, password=PASSWORD, database=DATABASE) for _ in range(MAX_CONNECTIONS)]
-busy_connections = []
+MAX_SIZE = 50
+overflow = 50
+conn_queue = queue.Queue(maxsize=MAX_SIZE)
+SLEEP_TIME = 0.1
+
+def create_connection():
+    return pymysql.connect(host=HOST, port=PORT, user=USER, password=PASSWORD, database=DATABASE)
 
 def get_connection():
+    global lock
+    global conn_queue
+    global overflow
     while True:
-        lock.acquire()
-        try:
-            if len(free_connections) == 0:
-               time.sleep(3)
-            conn = free_connections.pop()
-            busy_connections.append(conn)
-            return conn
-        finally:
-            lock.release()
-            
+        if conn_queue.empty() and overflow <= 0:
+            time.sleep(SLEEP_TIME)
+            continue
+        conn = None
+        with lock:
+            if conn_queue.empty() and overflow <= 0:
+                time.sleep(SLEEP_TIME)
+                continue
+            elif not conn_queue.empty():
+                conn = conn_queue.get_nowait()
+            else:
+                overflow -= 1
+                conn = create_connection()
+        if conn is None:
+            continue
+        return conn          
 
 def release_connection(conn):
-    while True:
-        lock.acquire()
-        try:
-            busy_connections.remove(conn)
-            free_connections.append(conn)
-            return
-        finally:
-            lock.release()
+    global lock
+    global conn_queue
+    global overflow
+    
+    with lock:
+        if conn_queue.full():
+            conn.close()
+        else:
+            conn_queue.put_nowait(conn)
+            
+    return
     
 
 def close_conncections():
-    free_connections.extend(busy_connections)
-    for conn in free_connections:
-        conn.close()
-        
-
+    global lock
+    global conn_queue
+    global overflow
+    
+    with lock:
+        while not conn_queue.empty():
+            conn_queue.get_nowait().close()
+    return
