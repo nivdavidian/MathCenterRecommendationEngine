@@ -63,6 +63,19 @@ connection.commit()
     
 # connection.commit()
 
+# cursor.execute("CREATE FULLTEXT INDEX idx_name ON worksheet_titles(title);")
+
+# sql = """SELECT *
+# FROM information_schema.statistics
+# WHERE table_schema = 'mathCenterDB' -- Replace with your database name
+# AND table_name = 'worksheet_titles'
+# AND index_type = 'FULLTEXT';"""
+
+# cursor.execute(sql)
+# print(cursor.fetchall())
+
+# connection.commit()
+
 cursor.close()
 sql_pool.release_connection(connection)
 
@@ -126,7 +139,7 @@ def get_all_worksheet_grades():
 def get_worksheet_grades_by_country_lang(c_code, l_code):
     conn = sql_pool.get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT page_uid, country_code, language_code FROM worksheet_grades WHERE country_code = (%s) AND language_code = (%s)", (c_code, l_code))
+    cursor.execute("SELECT page_uid, min_grade, max_grade FROM worksheet_grades WHERE country_code = %s AND language_code = %s", (c_code, l_code))
     res = cursor.fetchall()
     cursor.close()
     sql_pool.release_connection(conn)
@@ -191,6 +204,21 @@ def get_pages(worksheet_uids, l_code="he"):
     sql = sql % place_holders
     sql = sql + "(%s)"
     cursor.execute(sql, (l_code,))
+    
+    res = cursor.fetchall()
+    if res == None:
+        res = []
+    
+    cursor.close()
+    sql_pool.release_connection(conn)
+    return res
+
+def get_recommend_search(term, l_code="he"):
+    conn = sql_pool.get_connection()
+    cursor = conn.cursor()
+    
+    sql = "SELECT uid, title FROM worksheet_titles WHERE MATCH(title) AGAINST (%s IN NATURAL LANGUAGE MODE) AND language_code = %s LIMIT 100"
+    cursor.execute(sql, (term, l_code))
     
     res = cursor.fetchall()
     if res == None:

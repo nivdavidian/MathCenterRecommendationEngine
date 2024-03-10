@@ -11,12 +11,12 @@ CORS(app)  # This enables CORS for all routes and origins
 def get_pages():
     try:
         try:
-            page = request.args.get("page", 1, type=int)
+            term = request.args.get("term", "", type=str)
         except:
-            page = 1
-        pages100 = dbAPI.get_worksheets_page("he", "IL", page)
+            term = ""
+        results = dbAPI.get_recommend_search(term)
         worksheets = []
-        for row in pages100:
+        for row in results:
             worksheet = {"worksheet_name": row[1], "worksheet_id": row[0]}
             worksheets.append(worksheet)
     except Exception as e:

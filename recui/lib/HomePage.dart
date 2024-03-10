@@ -25,7 +25,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> searchPage(String searchString) async {
-    var url = Uri.parse('http://127.0.0.1:5000/getpage?search=$searchString');
+    var url = Uri.parse('http://127.0.0.1:5000/getpages?term=$searchString');
     var response = await http.get(url);
 
     if (response.statusCode == 200) {
@@ -126,7 +126,7 @@ class _HomePageState extends State<HomePage> {
                               padding: const EdgeInsets.all(8.0),
                               child: Container(
                                 width: 350,
-                                height: 50,
+                                height: 70,
                                 decoration: BoxDecoration(
                                   border:
                                       Border.all(color: Colors.black, width: 1),
