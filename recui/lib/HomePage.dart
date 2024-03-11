@@ -25,7 +25,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> searchPage(String searchString) async {
-    var url = Uri.parse('http://127.0.0.1:5000/getpages?term=$searchString');
+    var url = Uri.parse('http://127.0.0.1:3000/getpages?term=$searchString');
     var response = await http.get(url);
 
     if (response.statusCode == 200) {
@@ -43,7 +43,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> fetchData() async {
-    var url = Uri.parse('http://127.0.0.1:5000/getpages');
+    var url = Uri.parse('http://127.0.0.1:3000/getpages');
     var response = await http.get(url);
 
     if (response.statusCode == 200) {

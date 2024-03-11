@@ -5,7 +5,7 @@ from flask_cors import CORS
 import service
 
 app = Flask(__name__)
-CORS(app)  # This enables CORS for all routes and origins
+# CORS(app)  # This enables CORS for all routes and origins
 
 @app.route("/getpages")
 def get_pages():
