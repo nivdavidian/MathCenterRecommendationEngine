@@ -34,7 +34,7 @@ class _RecommendationPageState extends State<RecommendationPage> {
 
   Future<void> recommend(String worksheetUid) async {
     var url = Uri.parse(
-        'http://127.0.0.1:3000/getrecommendation?worksheet_uid=$worksheetUid');
+        'http://13.49.248.115:3000/getrecommendation?worksheet_uid=$worksheetUid');
     var response = await http.get(url);
 
     if (response.statusCode == 200) {

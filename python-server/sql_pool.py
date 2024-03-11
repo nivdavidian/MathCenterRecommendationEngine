@@ -6,7 +6,7 @@ import os
 import queue
 from dotenv import load_dotenv
 
-load_dotenv("/Users/nivdavidian/MathCenterRecommendationEngine/python-server/dbenv.env")
+load_dotenv("~/MathCenterRecommendationEngine/python-server/dbenv.env")
 
 # Set the database credentials
 HOST = os.environ.get("HOST")
