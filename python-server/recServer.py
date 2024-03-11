@@ -11,10 +11,15 @@ app = Flask(__name__)
 def get_pages():
     try:
         try:
+            print(request.args)
             term = request.args.get("term", "", type=str)
+            c_code = request.args.get("cCode", "", type=str)
+            l_code = request.args.get("lCode", "", type=str)
         except:
             term = ""
-        results = dbAPI.get_recommend_search(term)
+            c_code = "IL"
+            l_code = "he"
+        results = dbAPI.get_recommend_search(term,l_code, c_code)
         worksheets = []
         for row in results:
             worksheet = {"worksheet_name": row[1], "worksheet_id": row[0]}
@@ -25,22 +30,22 @@ def get_pages():
     
     return jsonify(worksheets)
 
-@app.route("/getpage")
-def get_page():
+@app.route("/getclcodes")
+def get_cl_codes():
     try:
-        search = request.args.get("search")
-        if search == None:
-            return jsonify([])
-        pages = dbAPI.get_page(search)
-        worksheets = []
-        for row in pages:
-            worksheet = {"worksheet_name": row[1], "worksheet_id": row[0]}
-            worksheets.append(worksheet)
+        codes = dbAPI.get_distinct_cl_codes()
+        
+        cl_codes = {}
+        for row in codes:
+            c_code, l_code = row[0], row[1]
+            arr = cl_codes.get(c_code, [])
+            arr.append(l_code)
+            cl_codes[c_code] = arr
+            
+        return jsonify(cl_codes)
     except Exception as e:
-        app.logger.error(e)
+        app.logger.error(f"get cl codes:\n{e}")
         return abort(500, "Error")
-    
-    return jsonify(worksheets)
     
         
     
@@ -49,7 +54,11 @@ def get_recommendation():
     t = datetime.datetime.now()
     try:
         worksheet_uid = request.args.get("worksheet_uid")
-        rec = service.recommend(worksheet_uid)
+        
+        c_code = request.args.get("cCode", "", type=str)
+        l_code = request.args.get("lCode", "", type=str)
+        print(request.args)
+        rec = service.recommend(worksheet_uid, c_code=c_code, l_code=l_code)
     except Exception as e:
         app.logger.error(e)
         return abort(500, "Error")

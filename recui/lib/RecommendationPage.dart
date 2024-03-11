@@ -7,7 +7,13 @@ import 'dart:convert';
 import 'package:url_launcher/url_launcher.dart';
 
 class RecommendationPage extends StatefulWidget {
-  const RecommendationPage({super.key, required this.data});
+  final String cCode;
+  final String lCode;
+  const RecommendationPage(
+      {super.key,
+      required this.data,
+      required this.cCode,
+      required this.lCode});
 
   final Map<String, String> data;
   @override
@@ -20,9 +26,9 @@ class _RecommendationPageState extends State<RecommendationPage> {
 
   Future<void> redirectToUrl(String worksheetUid) async {
     final String worksheetUriString =
-        "https://math-center.org/he-IL/worksheet/$worksheetUid/%D7%97%D7%99%D7%91%D7%95%D7%A8-%D7%95%D7%97%D7%99%D7%A1%D7%95%D7%A8-%D7%A2%D7%93-10-%D7%93%D7%A3-%D7%9E%D7%A1%D7%A4%D7%A8-1/";
+        "https://math-center.org/${widget.lCode}-${widget.cCode}/worksheet/$worksheetUid/%D7%97%D7%99%D7%91%D7%95%D7%A8-%D7%95%D7%97%D7%99%D7%A1%D7%95%D7%A8-%D7%A2%D7%93-10-%D7%93%D7%A3-%D7%9E%D7%A1%D7%A4%D7%A8-1/";
     final String interactiveUriString =
-        "https://math-center.org/he-IL/worksheet/$worksheetUid/interactive/";
+        "https://math-center.org/${widget.lCode}-${widget.cCode}/worksheet/$worksheetUid/interactive/";
     final Uri worksheetUri = Uri.parse(worksheetUriString);
     if (!await launchUrl(worksheetUri)) {
       final Uri interactiveUri = Uri.parse(interactiveUriString);
@@ -34,7 +40,7 @@ class _RecommendationPageState extends State<RecommendationPage> {
 
   Future<void> recommend(String worksheetUid) async {
     var url = Uri.parse(
-        'http://13.49.248.115:3000/getrecommendation?worksheet_uid=$worksheetUid');
+        'http://localhost:3000/getrecommendation?worksheet_uid=$worksheetUid&lCode=${widget.lCode}&cCode=${widget.cCode}');
     var response = await http.get(url);
 
     if (response.statusCode == 200) {

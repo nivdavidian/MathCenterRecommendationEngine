@@ -213,14 +213,15 @@ def get_pages(worksheet_uids, l_code="he"):
     sql_pool.release_connection(conn)
     return res
 
-def get_recommend_search(term, l_code="he"):
+def get_recommend_search(term, l_code, c_code):
     conn = sql_pool.get_connection()
     cursor = conn.cursor()
     
-    sql = "SELECT uid, title FROM worksheet_titles WHERE MATCH(title) AGAINST (%s IN NATURAL LANGUAGE MODE) AND language_code = %s LIMIT 100"
-    cursor.execute(sql, (term, l_code))
+    sql = "SELECT t.uid, t.title FROM worksheet_titles AS t JOIN worksheet_grades AS g ON t.uid = g.page_uid AND t.language_code = g.language_code WHERE MATCH(t.title) AGAINST (%s IN NATURAL LANGUAGE MODE) AND t.language_code = %s AND g.country_code = %s LIMIT 100"
+    cursor.execute(sql, (term, l_code, c_code))
     
     res = cursor.fetchall()
+    
     if res == None:
         res = []
     
@@ -228,6 +229,21 @@ def get_recommend_search(term, l_code="he"):
     sql_pool.release_connection(conn)
     return res
     
+def get_distinct_cl_codes():
+    conn = sql_pool.get_connection()
+    cursor = conn.cursor()
+    
+    sql = "SELECT country_code, language_code FROM worksheet_grades GROUP BY country_code, language_code;"
+    cursor.execute(sql)
+    
+    res = cursor.fetchall()
+    print(len(res))
+    if res == None:
+        res = []
+    
+    cursor.close()
+    sql_pool.release_connection(conn)
+    return res
 
 
 
