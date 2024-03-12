@@ -56,6 +56,8 @@ class EnumManipulation:
 
 pd.set_option('display.max_rows', None)
 pd.set_option('display.max_columns', None)
+pd.set_option('display.max_colwidth', None)
+
 
 # Specify the directory
 directory_path = 'cos_sim_files'
@@ -178,15 +180,25 @@ def calculate_cos_sim_country_language_topics():
     
     return cos_sim_df
 
-def analyze_downloads():
-    res = dbAPI.get_all_user_downloads()
-    df3 = pd.DataFrame(res, columns=["user_uid", "country_code", "language_code", "downloads"])
+def analyze_downloads(c_code, l_code):
 
-    df3["downloads"] = df3["downloads"].apply(lambda x: list(json.loads(x[1:-1])))
+    res = dbAPI.get_all_user_downloads_by_clcodes(c_code, l_code)
+
+    # Convert to DF
+    df3 = pd.DataFrame(res, columns=["user_uid", "downloads"])
+
+
+    # convert from json to map/list
+    df3["downloads"] = df3["downloads"].apply(lambda x: list(json.loads(f"{x[0:2]}\"{x[2:-1]}")))
+
+    #flatten "downloads" so every row can be multiplied if there more than one download
     df3 = df3.explode("downloads").reset_index(drop=True)
+
+    # take the map provided in downloads and put worksheetuid and time in different rows
     df3["worksheet_uid"] = df3["downloads"].apply(lambda x: x["pageUid"])
     df3["downloads"] = pd.to_datetime(df3["downloads"].apply(lambda x: x["time"]), utc=True)
 
+    # remove redundant rows of trying to download same file around the same time
     rows_to_remove = []
 
     for index, row in df3.iterrows():
@@ -197,14 +209,27 @@ def analyze_downloads():
 
     df3 = df3.drop(rows_to_remove).reset_index(drop=True)
 
-    df3["year"] = df3["downloads"].dt.year
+    #divide time to 3 different rows
+    # df3["year"] = df3["downloads"].dt.year
     df3["month"] = df3["downloads"].dt.month
-    df3["day"] = df3["downloads"].dt.day
+    # df3["day"] = df3["downloads"].dt.day
 
-    df3 = df3.drop(columns=['downloads', 'user_uid', 'day', 'year'])
+    df3 = df3.drop(columns=['downloads', 'user_uid'])
 
-    df3 = df3[["country_code", "language_code", "worksheet_uid", "month"]]
-    df3.drop_duplicates()
+    df3 = df3[[ "worksheet_uid", "month"]]
+
+    worksheet_month_counts = df3.groupby(['worksheet_uid', 'month']).size().reset_index(name='count')
+
+    return worksheet_month_counts
+
+    
+
+
+
+    # for _, row in df3.iterrows():
+    #     if row["worksheet_uid"] in zeroes_df.index:
+    #         zeroes_df.loc[row["worksheet_uid"], row["month"]] = 1
+    # del df3
 
 def calculate_cos_sim_by_country(c_code, l_code):
     enum_man = EnumManipulation()
@@ -236,16 +261,16 @@ def calculate_cos_sim_by_country(c_code, l_code):
     
     cos_sim = cosine_similarity(zeroes_df.values)
     
-    # print("0ba2893f\n", zeroes_df.loc["0ba2893f", zeroes_df.loc["0ba2893f"] != 0])
+    print("0ba2893f\n", zeroes_df.loc["0ba2893f", zeroes_df.loc["0ba2893f"] != 0])
     
-    # print("0a810afe\n", zeroes_df.loc["0a810afe", zeroes_df.loc["0a810afe"] != 0])
+    print("0a810afe\n", zeroes_df.loc["0a810afe", zeroes_df.loc["0a810afe"] != 0])
     
-    # print("00d74576\n", zeroes_df.loc["00d74576", zeroes_df.loc["00d74576"] != 0])
+    print("00d74576\n", zeroes_df.loc["00d74576", zeroes_df.loc["00d74576"] != 0])
 
     cos_sim_df = pd.DataFrame(cos_sim, index=zeroes_df.index, columns=zeroes_df.index)
     del zeroes_df
-    # print("0ba2893f", cos_sim_df.loc["0a810afe","0ba2893f"])
-    # print("00d74576", cos_sim_df.loc["0a810afe","00d74576"])
+    print("0ba2893f", cos_sim_df.loc["0a810afe","0ba2893f"])
+    print("00d74576", cos_sim_df.loc["0a810afe","00d74576"])
     
     return cos_sim_df
 
@@ -267,28 +292,34 @@ def top_n_cos_sim(df: pd.DataFrame, n):
     return top_10_df
 
 def task(c_code, l_code):
-    cos_df = calculate_cos_sim_by_country(c_code, l_code)
+    # cos_df = calculate_cos_sim_by_country(c_code, l_code)
     n = 200
-    top_n_df = top_n_cos_sim(cos_df, n)
-    path = f"top_{n}_by_country_files"
+    # top_n_df = top_n_cos_sim(cos_df, n)
+    worksheet_month_count = analyze_downloads(c_code, l_code)
+    path_top_n = f"top_{n}_by_country_files"
+    os.makedirs(path_top_n, exist_ok=True)
+    path = f"worksheet_month_count_by_country_files"
     os.makedirs(path, exist_ok=True)
-    top_n_df.to_parquet(f"{path}/top_{n}_{l_code}-{c_code}.parquet", index=False)
-    cos_df.to_parquet(f'cos_sim_files/{l_code}-{c_code}.parquet', index=False)
+
+    # top_n_df.to_parquet(f"{path_top_n}/top_{n}_{l_code}-{c_code}.parquet", index=False)
+    # cos_df.to_parquet(f'cos_sim_files/{l_code}-{c_code}.parquet', index=False)
+    worksheet_month_count.to_parquet(f"{path}/{l_code}-{c_code}.parquet", index=False)
+
     print(f"finished {l_code}-{c_code}")
     
 
-task("IL", "he")
-# try:
-#     t = datetime.datetime.now()
+# analyze_downloads("IL", "he")
+try:
+    t = datetime.datetime.now()
 
-#     with ThreadPoolExecutor(max_workers=10) as executor:
-#         tasks = [executor.submit(task, c_code, l_code) for c_code, l_code in dbAPI.get_distinct_country_lang()]
-#         for future in tasks:
-#             future.result() # Wait for all tasks to complete
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        tasks = [executor.submit(task, c_code, l_code) for c_code, l_code in dbAPI.get_distinct_country_lang()]
+        for future in tasks:
+            future.result() # Wait for all tasks to complete
     
-#     print(datetime.datetime.now()-t)
-# except Exception as e:
-#     print(e)
+    print(datetime.datetime.now()-t)
+except Exception as e:
+    print(e)
         
-# finally:
-sql_pool.close_conncections()
+finally:
+    sql_pool.close_conncections()

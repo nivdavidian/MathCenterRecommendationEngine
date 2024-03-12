@@ -118,6 +118,20 @@ def get_all_user_downloads():
     sql_pool.release_connection(conn)
     return res
 
+def get_all_user_downloads_by_clcodes(c_code, l_code):
+    try:
+        conn = sql_pool.get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT user_id, downloads FROM user_downloads WHERE country_code = %s AND language_code = %s", (l_code, c_code))
+        res = cursor.fetchall()
+        cursor.close()
+        return res
+    except Exception as e:
+        print(e)
+        raise e
+    finally:
+        sql_pool.release_connection(conn)
+
 def get_all_pages_topics():
     conn = sql_pool.get_connection()
     cursor = conn.cursor()
