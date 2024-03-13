@@ -229,7 +229,7 @@ def get_recommend_search(term, l_code, c_code):
         cursor.execute(sql, (term, l_code))
         
         res = cursor.fetchall()
-        if res == None:
+        if res == None or len(res) == 0:
             return []
         
         sql = "SELECT page_uid FROM worksheet_grades WHERE language_code = %s AND country_code = %s AND page_uid "

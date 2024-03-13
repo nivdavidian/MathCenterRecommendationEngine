@@ -1,11 +1,21 @@
 import dbAPI
-import datetime
-from flask import Flask, request, jsonify, abort
-from flask_cors import CORS
 import service
+import time
+from flask import Flask, request, jsonify, abort, g
+# from flask_cors import CORS
 
 app = Flask(__name__)
 # CORS(app)  # This enables CORS for all routes and origins
+
+@app.before_request
+def before_request():
+    g.start_time = time.time()
+    
+@app.after_request
+def after_request(response):
+    duration = time.time() - g.start_time
+    app.logger.info(f"{request.path} took {duration}")
+    return response
 
 @app.route("/getpages")
 def get_pages():
@@ -46,14 +56,11 @@ def get_cl_codes():
     
 @app.route("/getrecommendation")
 def get_recommendation():
-    t = datetime.datetime.now()
     try:
         worksheet_uid = request.args.get("worksheet_uid")
         c_code = request.args.get("cCode", "", type=str)
         l_code = request.args.get("lCode", "", type=str)
-        print(request.args)
         rec = service.recommend(worksheet_uid, c_code=c_code, l_code=l_code)
-        app.logger.debug(f"recommend lag: {datetime.datetime.now()-t}")
         return jsonify(rec)
     except Exception as e:
         app.logger.error(e)
