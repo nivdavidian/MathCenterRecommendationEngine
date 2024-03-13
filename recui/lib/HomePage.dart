@@ -1,8 +1,12 @@
 // ignore_for_file: sized_box_for_whitespace
+import 'dart:developer';
+import 'dart:html';
+
 import 'package:flutter/material.dart';
 import 'package:recui/RecommendationPage.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:io';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -40,7 +44,7 @@ class _HomePageState extends State<HomePage> {
     } else {
       // If the server did not return a 200 OK response,
       // then throw an exception.
-      print("failed");
+      log("${response.statusCode}");
     }
   }
 
@@ -65,7 +69,7 @@ class _HomePageState extends State<HomePage> {
     } else {
       // If the server did not return a 200 OK response,
       // then throw an exception.
-      print("failed");
+      log("${response.statusCode}");
     }
   }
 
@@ -83,7 +87,7 @@ class _HomePageState extends State<HomePage> {
     } else {
       // If the server did not return a 200 OK response,
       // then throw an exception.
-      print("failed");
+      log("${response.statusCode}");
     }
   }
 
@@ -202,8 +206,10 @@ class _HomePageState extends State<HomePage> {
                                                             ["worksheet_name"]
                                                         .toString()
                                                   },
-                                                  cCode: initial_drop_value.split("-")[0],
-                                                  lCode: initial_drop_value.split("-")[1],
+                                                  cCode: initial_drop_value
+                                                      .split("-")[0],
+                                                  lCode: initial_drop_value
+                                                      .split("-")[1],
                                                 )));
                                   },
                                   splashColor: Colors.purple[50],

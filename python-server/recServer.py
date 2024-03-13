@@ -10,15 +10,10 @@ app = Flask(__name__)
 @app.route("/getpages")
 def get_pages():
     try:
-        try:
-            print(request.args)
-            term = request.args.get("term", "", type=str)
-            c_code = request.args.get("cCode", "", type=str)
-            l_code = request.args.get("lCode", "", type=str)
-        except:
-            term = ""
-            c_code = "IL"
-            l_code = "he"
+        term = request.args.get("term", "", type=str)
+        c_code = request.args.get("cCode", "", type=str)
+        l_code = request.args.get("lCode", "", type=str)
+        print(request.args)
         results = dbAPI.get_recommend_search(term,l_code, c_code)
         worksheets = []
         for row in results:
@@ -54,17 +49,16 @@ def get_recommendation():
     t = datetime.datetime.now()
     try:
         worksheet_uid = request.args.get("worksheet_uid")
-        
         c_code = request.args.get("cCode", "", type=str)
         l_code = request.args.get("lCode", "", type=str)
         print(request.args)
         rec = service.recommend(worksheet_uid, c_code=c_code, l_code=l_code)
+        app.logger.debug(f"recommend lag: {datetime.datetime.now()-t}")
+        return jsonify(rec)
     except Exception as e:
         app.logger.error(e)
         return abort(500, "Error")
     
-    app.logger.debug(f"recommend lag: {datetime.datetime.now()-t}")
-    return jsonify(rec)
         
 
 

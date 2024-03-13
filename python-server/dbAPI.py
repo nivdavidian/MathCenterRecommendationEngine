@@ -214,21 +214,39 @@ def get_pages(worksheet_uids, l_code="he"):
     return res
 
 def get_recommend_search(term, l_code, c_code):
-    conn = sql_pool.get_connection()
-    cursor = conn.cursor()
-    
-    sql = "SELECT t.uid, t.title FROM worksheet_titles AS t JOIN worksheet_grades AS g ON t.uid = g.page_uid AND t.language_code = g.language_code WHERE MATCH(t.title) AGAINST (%s IN NATURAL LANGUAGE MODE) AND t.language_code = %s AND g.country_code = %s LIMIT 100"
-    cursor.execute(sql, (term, l_code, c_code))
-    
-    res = cursor.fetchall()
-    
-    if res == None:
-        res = []
-    
-    cursor.close()
-    sql_pool.release_connection(conn)
-    return res
-    
+    if term == '':
+        return []
+    try:
+        conn = sql_pool.get_connection()
+        cursor = conn.cursor()
+        
+        sql = """SELECT uid, title 
+        FROM worksheet_titles
+        WHERE MATCH(title) AGAINST (%s IN NATURAL LANGUAGE MODE) 
+        AND language_code = %s 
+        LIMIT 100;
+        """
+        cursor.execute(sql, (term, l_code))
+        
+        res = cursor.fetchall()
+        if res == None:
+            return []
+        
+        sql = "SELECT page_uid FROM worksheet_grades WHERE language_code = %s AND country_code = %s AND page_uid "
+        sql += "IN (%s)" % ", ".join(map(lambda x: f"\'{x[0]}\'", res))
+        cursor.execute(sql, (l_code, c_code,))
+        uids = [x[0] for x in cursor.fetchall()]
+        
+        filtered = filter(lambda x: x[0] in uids, res)
+        
+        return filtered
+    except Exception as e:
+        print(e)
+        raise e
+    finally:
+        cursor.close()
+        sql_pool.release_connection(conn)
+        
 def get_distinct_cl_codes():
     conn = sql_pool.get_connection()
     cursor = conn.cursor()
