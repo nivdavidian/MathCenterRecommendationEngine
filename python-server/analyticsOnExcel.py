@@ -281,7 +281,7 @@ def analyze_interactive(c_code, l_code):
     d2 = pd.DataFrame("", index=df2.index, columns=["worksheets"])
     del df2
     
-    for i, value in groupby.apply(aa, include_groups=False).items():
+    for i, value in groupby.apply(lambda group: ",".join(group["worksheet_uid"]), include_groups=False).items():
         if i in d2.index:
             d2.loc[i, "worksheets"] = value
     
@@ -296,11 +296,6 @@ def analyze_interactive(c_code, l_code):
     os.makedirs("./worksheet_users_indexes", exist_ok=True)
     df.to_parquet(f"./worksheet_users_indexes/{c_code}-{l_code}.parquet")
     df.to_csv(f"./worksheet_users_indexes/{c_code}-{l_code}.csv")
-    
-def aa(group):
-    # print(group["worksheet_uid"])
-    # print(group.values)
-    return ",".join(group["worksheet_uid"])
 
 def task(c_code, l_code):
     cos_df = calculate_cos_sim_by_country(c_code, l_code)
