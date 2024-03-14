@@ -1,12 +1,9 @@
 // ignore_for_file: sized_box_for_whitespace
 import 'dart:developer';
-import 'dart:html';
-
 import 'package:flutter/material.dart';
 import 'package:recui/RecommendationPage.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'dart:io';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -22,7 +19,7 @@ class _HomePageState extends State<HomePage> {
   String _searchString = "";
   var _data = [];
   Map<String, dynamic> clCodes = {};
-  String initial_drop_value = "IL-he";
+  String initialDropValue = "IL-he";
 
   @override
   void initState() {
@@ -52,7 +49,7 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       isLoading = true;
     });
-    var split = initial_drop_value.split("-");
+    var split = initialDropValue.split("-");
     var cCode = split[0];
     var lCode = split[1];
     var url = Uri.parse(
@@ -146,7 +143,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               DropdownButton(
-                  value: initial_drop_value,
+                  value: initialDropValue,
                   items: () {
                     var cl = [];
                     for (var key in clCodes.keys) {
@@ -162,7 +159,7 @@ class _HomePageState extends State<HomePage> {
                       .toList(),
                   onChanged: (value) {
                     setState(() {
-                      initial_drop_value = value.toString();
+                      initialDropValue = value.toString();
                     });
                     return;
                   })
@@ -206,9 +203,9 @@ class _HomePageState extends State<HomePage> {
                                                             ["worksheet_name"]
                                                         .toString()
                                                   },
-                                                  cCode: initial_drop_value
+                                                  cCode: initialDropValue
                                                       .split("-")[0],
-                                                  lCode: initial_drop_value
+                                                  lCode: initialDropValue
                                                       .split("-")[1],
                                                 )));
                                   },
