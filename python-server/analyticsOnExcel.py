@@ -266,6 +266,42 @@ def top_n_cos_sim(df: pd.DataFrame, n):
 
     return top_10_df
 
+def analyze_interactive(c_code, l_code):
+    res = dbAPI.get_interactive_by_clcodes(c_code, l_code)
+    if res == None or len(res) == 0:
+        print("something went wrong")
+    
+    df = pd.DataFrame(res, columns=["user_uid", "worksheet_uid", "l_code", "c_code", "time"])
+    df = df.drop(columns=["c_code", "l_code", "time"])
+    
+    groupby = df.groupby(by="user_uid")
+    df2 = groupby.count().rename(columns={"worksheet_uid": "count"})
+    df2 = df2[df2["count"]>1]
+    
+    d2 = pd.DataFrame("", index=df2.index, columns=["worksheets"])
+    del df2
+    
+    for i, value in groupby.apply(aa, include_groups=False).items():
+        if i in d2.index:
+            d2.loc[i, "worksheets"] = value
+    
+    os.makedirs("./user_worksheets_indexes", exist_ok=True)
+    d2.to_parquet(f"./user_worksheets_indexes/{c_code}-{l_code}.parquet")
+    d2.to_csv(f"./user_worksheets_indexes/{c_code}-{l_code}.csv")
+    
+    df = df.groupby(by="worksheet_uid").apply(lambda group: ",".join(group["user_uid"]), include_groups=False)
+    df.name = "users"
+    df = pd.DataFrame(df)
+    
+    os.makedirs("./worksheet_users_indexes", exist_ok=True)
+    df.to_parquet(f"./worksheet_users_indexes/{c_code}-{l_code}.parquet")
+    df.to_csv(f"./worksheet_users_indexes/{c_code}-{l_code}.csv")
+    
+def aa(group):
+    # print(group["worksheet_uid"])
+    # print(group.values)
+    return ",".join(group["worksheet_uid"])
+
 def task(c_code, l_code):
     cos_df = calculate_cos_sim_by_country(c_code, l_code)
     n = 200
@@ -277,7 +313,7 @@ def task(c_code, l_code):
     print(f"finished {l_code}-{c_code}")
     
 
-task("IL", "he")
+analyze_interactive("IL", "he")
 # try:
 #     t = datetime.datetime.now()
 

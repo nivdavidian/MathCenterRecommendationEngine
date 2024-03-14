@@ -72,14 +72,18 @@ connection.commit()
 #     if i==(len(df["language_code"])+1):
 #         t = False
 #     tps = [tuple(x) for x in df.iloc[i:(i+step)].to_numpy()]
-#     cursor.executemany("INSERT INTO user_downloads (language_code, country_code, downloads) VALUES (%s, %s, %s)", tps)
+#     cursor.executemany("INSERT INTO user_downloads (country_code, language_code, downloads) VALUES (%s, %s, %s)", tps)
 #     i = min((i+step), (len(df)+1))
     
 # connection.commit()
 
-cursor.execute("SELECT COUNT(*) FROM user_downloads")
-res = cursor.fetchall()
-print(res)
+# cursor.execute("SELECT COUNT(*)  FROM user_interactive_sets")
+# res = cursor.fetchall()
+# print(res)
+
+# cursor.execute("SELECT * FROM user_interactive_sets LIMIT 20")
+# res = cursor.fetchall()
+# print(res)
 # df = pd.DataFrame(res, columns=["user_uid", "country_code", "language_code", "downloads"])
 
 # print(df["dowloads"])

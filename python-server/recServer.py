@@ -67,7 +67,18 @@ def get_recommendation():
         return abort(500, "Error")
     
         
-
+@app.route("/recuseralike", methods=["POST"])
+def get_recommendation_user():
+    try:
+        worksheet_uids = request.json["worksheet_uids"]
+        c_code = request.json["cCode"]
+        l_code = request.json["lCode"]
+        rec = service.recommend_users_alike(worksheet_uids, c_code=c_code, l_code=l_code)
+        return jsonify(rec)
+    except Exception as e:
+        app.logger.error(e)
+        return abort(500, "Error")
+    
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

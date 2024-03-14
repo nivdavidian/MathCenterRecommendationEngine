@@ -5,6 +5,7 @@ dbenv.env
 .DS_Store
 .vscode
 *.parquet
+*.csv
 
 
 **/dgph

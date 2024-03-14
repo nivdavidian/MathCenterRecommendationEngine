@@ -263,6 +263,26 @@ def get_distinct_cl_codes():
     sql_pool.release_connection(conn)
     return res
 
+def get_file_df(path):
+    df = pd.read_parquet(path)
+    return df
+
+def get_interactive_by_clcodes(c_code, l_code):
+    try:
+        conn = sql_pool.get_connection()
+        cursor = conn.cursor()
+        
+        sql = "SELECT * FROM user_interactive_sets WHERE country_code = %s AND language_code = %s"
+        cursor.execute(sql, (c_code, l_code))
+        
+        res = cursor.fetchall()
+        return res
+    except Exception as e:
+        raise e
+    finally:
+        cursor.close()
+        sql_pool.release_connection(conn)
+
 
 
 # t = datetime.datetime.now()
