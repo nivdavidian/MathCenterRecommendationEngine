@@ -1,7 +1,7 @@
 import dbAPI
 import service
 import time
-from flask import Flask, request, jsonify, abort, g
+from flask import Flask, request, jsonify, abort, g, make_response
 # from flask_cors import CORS
 
 app = Flask(__name__)
@@ -10,6 +10,7 @@ app = Flask(__name__)
 @app.before_request
 def before_request():
     g.start_time = time.time()
+    app.logger.info(f'content Length:{request.content_length}')
     
 @app.after_request
 def after_request(response):
@@ -78,6 +79,17 @@ def get_recommendation_user():
     except Exception as e:
         app.logger.error(e)
         return abort(500, "Error")
+    
+@app.route('/updaterecommendations', methods=['POST'])
+def update_recommendations():
+    try:
+        service.update_files_recommendations(request.json)
+        return make_response("OK", 200)
+    except Exception as e:
+        app.logger.error(e)
+        return abort(500, "Error")
+        
+        
     
 
 if __name__ == "__main__":

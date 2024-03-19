@@ -1,11 +1,12 @@
 import userSimilarityClass as uss
 import random
 from pageclass import Worksheet
-import datetime as dt
+from analyzer import AnalyzerFactory
+from wrapper import wrap
 
 
 
-def recommend(worksheet_uid, n=100, c_code="IL", l_code="he"):
+def recommend(worksheet_uid, n=20, c_code="IL", l_code="he"):
     worksheet = Worksheet(worksheet_uid=worksheet_uid, c_code=c_code, l_code=l_code)
     worksheet.build_page()
     rec = worksheet.get_rec(n)
@@ -28,4 +29,11 @@ def recommend_users_alike(worksheet_uids, c_code, l_code):
         score_above -= 0.05
     
     return random.sample(users_worksheets, (min(len(users_worksheets), N)))
+
+def update_files_recommendations(json):
+    analyzers = AnalyzerFactory.create_instance(**json)
+    wrapper = wrap(analyzers)
+    wrapper.run()
+    
+    
         
