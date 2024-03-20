@@ -11,15 +11,10 @@ def calculate_user_similarity(worksheet_uids, c_code, l_code):
     worksheets, index = get_user_worksheets(users, c_code, l_code)
     
     Y = pd.get_dummies(worksheets).groupby(level=0).max()
-    # Y = pd.DataFrame(0, index=worksheets.index.drop_duplicates(), columns=worksheets.drop_duplicates().values)
-    # for i, row in worksheets.items():
-    #     if i in Y.index:
-    #         Y.loc[i, row] = 1
             
     X = pd.DataFrame(0, index=[1], columns=Y.columns)
     X.loc[1, worksheet_uids] = 1
-    # X.to_csv("X.csv")
-    # Y.to_csv("Y.csv")
+    
     cos_sim = cosine_similarity(X.values, Y.values)
     cos_sim = pd.DataFrame(cos_sim, index=[1], columns=Y.index)
     return cos_sim, index

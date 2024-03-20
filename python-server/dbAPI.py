@@ -2,83 +2,6 @@ import datetime
 import sql_pool
 import pandas as pd
 
-# Connect to the database
-connection = sql_pool.get_connection()
-
-# Create a cursor object
-cursor = connection.cursor()
-
-# Execute a SQL query
-# cursor.execute("DROP TABLE topics;")
-# cursor.execute("DROP TABLE downloads;")
-# cursor.execute("DROP TABLE worksheet_grades;")
-cursor.execute("""CREATE TABLE IF NOT EXISTS topics(
-    worksheet_uid VARCHAR(255),
-    topic VARCHAR(255),
-    PRIMARY KEY (worksheet_uid, topic)
-    );""")
-
-cursor.execute("""CREATE TABLE IF NOT EXISTS user_downloads(
-    user_id INT AUTO_INCREMENT PRIMARY KEY,
-    country_code VARCHAR(5),
-    language_code VARCHAR(5),
-    downloads TEXT
-    );""")
-
-# cursor.execute("""CREATE TABLE IF NOT EXISTS other_user_downloads(
-#     user_id INT AUTO_INCREMENT PRIMARY KEY,
-#     country_code VARCHAR(5),
-#     language_code VARCHAR(5),
-#     page_uid VARCHAR
-#     );""")
-
-cursor.execute("""CREATE TABLE IF NOT EXISTS worksheet_grades(
-    country_code VARCHAR(5),
-    language_code VARCHAR(5),
-    page_uid VARCHAR(255),
-    min_grade VARCHAR(20),
-    max_grade VARCHAR(20)
-    );""")
-
-cursor.execute("""CREATE TABLE IF NOT EXISTS worksheet_titles(
-    uid VARCHAR(255),
-    language_code VARCHAR(5),
-    title VARCHAR(255),
-    PRIMARY KEY (uid, language_code)
-    );""")
-
-connection.commit()
-
-# df = pd.read_excel("/Users/nivdavidian/Downloads/Worksheet titles.xlsx", sheet_name='Sheet1')
-
-# i=0
-# step = 5000
-# t = True
-# while(t):
-#     if i==(len(df["language_code"])+1):
-#         t = False
-#     tps = [tuple(x) for x in df.iloc[i:(i+step)].to_numpy()]
-#     cursor.executemany("INSERT INTO worksheet_titles (uid, language_code, title) VALUES (%s, %s, %s)", tps)
-#     i = min((i+step), (len(df)+1))
-    
-# connection.commit()
-
-# cursor.execute("CREATE FULLTEXT INDEX idx_name ON worksheet_titles(title);")
-
-# sql = """SELECT *
-# FROM information_schema.statistics
-# WHERE table_schema = 'mathCenterDB' -- Replace with your database name
-# AND table_name = 'worksheet_titles'
-# AND index_type = 'FULLTEXT';"""
-
-# cursor.execute(sql)
-# print(cursor.fetchall())
-
-# connection.commit()
-
-cursor.close()
-sql_pool.release_connection(connection)
-
 def get_page_topics_by_uid(pages_uid):
     sql = "SELECT * FROM topics WHERE worksheet_uid IN (%s)"
     place_holders = ", ".join(f"\'{uid}\'"for uid in pages_uid)
@@ -282,10 +205,3 @@ def get_interactive_by_clcodes(c_code, l_code):
     finally:
         cursor.close()
         sql_pool.release_connection(conn)
-
-
-
-# t = datetime.datetime.now()
-# get_worksheets_page("he", "IL")
-# print(datetime.datetime.now()-t)
-# sql_pool.close_conncections()

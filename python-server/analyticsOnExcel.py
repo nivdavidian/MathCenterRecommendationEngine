@@ -152,8 +152,14 @@ def analyze_interactive(c_code, l_code):
     if res == None or len(res) == 0:
         print("something went wrong")
     
-    df = pd.DataFrame(res, columns=["user_uid", "worksheet_uid", "l_code", "c_code", "time"])
-    df = df.drop(columns=["c_code", "l_code", "time"])
+    df_o = pd.DataFrame(res, columns=["user_uid", "worksheet_uid", "l_code", "c_code", "time"])
+    
+    df_o["time"] = pd.to_datetime(df_o["time"], format="%Y-%m-%d %H:%M:%S")
+    df_o = df_o.sort_values(by=['user_uid', 'time'], ascending=[False, False])
+    # if l_code == 'he':
+    #     df_o.to_csv('ddd.csv')
+    
+    df = df_o.drop(columns=["c_code", "l_code", "time"])
     
     groupby = df.groupby(by="user_uid")
     df2 = groupby.count().rename(columns={"worksheet_uid": "count"})

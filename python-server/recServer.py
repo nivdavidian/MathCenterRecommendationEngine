@@ -71,10 +71,11 @@ def get_recommendation():
 @app.route("/recuseralike", methods=["POST"])
 def get_recommendation_user():
     try:
+        already_watched = request.json["already_watched"]
         worksheet_uids = request.json["worksheet_uids"]
         c_code = request.json["cCode"]
         l_code = request.json["lCode"]
-        rec = service.recommend_users_alike(worksheet_uids, c_code=c_code, l_code=l_code)
+        rec = service.recommend_users_alike(already_watched, worksheet_uids, c_code=c_code, l_code=l_code)
         return jsonify(rec)
     except Exception as e:
         app.logger.error(e)
