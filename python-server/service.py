@@ -18,15 +18,16 @@ def recommend_users_alike(already_watched, worksheet_uids, c_code, l_code):
     (user_similarity, index)  = uss.calculate_user_similarity(worksheet_uids, c_code, l_code)
     
     while True:
-        top_n_sim = uss.top_n_sim_users(user_similarity, N, score_above=score_above)
+        top_n_sim = uss.top_n_sim_users(user_similarity, score_above=score_above)
         users_worksheets, _ = uss.get_user_worksheets(top_n_sim, c_code, l_code, index=index)
         users_worksheets = users_worksheets.drop_duplicates()
         users_worksheets = list(filter(lambda x: x not in worksheet_uids and x not in already_watched, users_worksheets))
         
         if len(users_worksheets) >= N or score_above <= 0.3:
+            # print(len(users_worksheets), score_above)
             # return popular or alike the last page
             break
-        score_above -= 0.05
+        score_above -= 0.15
     
     return random.sample(users_worksheets, (min(len(users_worksheets), N)))
 

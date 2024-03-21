@@ -162,19 +162,28 @@ def analyze_interactive(c_code, l_code):
     df = df_o.drop(columns=["c_code", "l_code", "time"])
     
     groupby = df.groupby(by="user_uid")
-    df2 = groupby.count().rename(columns={"worksheet_uid": "count"})
+    df2 = groupby.nunique().rename(columns={"worksheet_uid": "count"})
     df2 = df2[df2["count"]>1]
     
-    d2 = pd.DataFrame("", index=df2.index, columns=["worksheets"])
-    del df2
+    d2 = groupby.apply(lambda group: [i for i in group["worksheet_uid"]], include_groups=False).to_frame().reset_index()
+    d2.columns = ['user_uid', "worksheets"]
+    d2 = d2[d2['user_uid'].isin(df2.index)].reset_index(drop=True)
+    n=10
+    step = int(n/2)
+    d2['worksheets'] = d2['worksheets'].apply(lambda g: [g[i*step:min(len(g),i*step+n)] for i in range(int(len(g)/step) if len(g)>=step else 1)])
+    d2 = d2.explode('worksheets').reset_index(drop=True)
+    def get_index(size):
+        for i in range(size):
+            yield i
     
-    for i, value in groupby.apply(lambda group: ",".join(group["worksheet_uid"]), include_groups=False).items():
-        if i in d2.index:
-            d2.loc[i, "worksheets"] = value
+    gen = get_index(d2.size)
+    d2["original_uid"] = d2["user_uid"]
+    d2['user_uid'] = d2['user_uid'].apply(lambda uid: f"{next(gen)}_{uid}")
     
     os.makedirs("./user_worksheets_indexes", exist_ok=True)
     d2.to_parquet(f"./user_worksheets_indexes/{c_code}-{l_code}.parquet")
-    # d2.to_csv(f"./user_worksheets_indexes/{c_code}-{l_code}.csv")
+    # if l_code == "he":
+    #     d2.to_csv(f"./user_worksheets_indexes/{c_code}-{l_code}.csv")
     
     df = df.groupby(by="worksheet_uid").apply(lambda group: ",".join(group["user_uid"]), include_groups=False)
     df.name = "users"
