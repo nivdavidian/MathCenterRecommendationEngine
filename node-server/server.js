@@ -1,29 +1,31 @@
+require('dotenv').config({ path: '/Users/nivdavidian/MathCenterRecommendationEngine/node-server/envParams.env' });
+
 const express = require('express');
-// const https = require('https');
-const http = require('http');
+const https = require('https');
 const fs = require('fs');
 const axios = require('axios');
 const cors = require('cors');
+const path = require('path');
 
 const app = express();
 
-// Replace with your actual certificate and key paths
-// const cert = fs.readFileSync('path/to/your/server.crt');
-// const key = fs.readFileSync('path/to/your/server.key');
+const sslOptions = {
+  key: fs.readFileSync(path.resolve(process.env.SSL_KEY_PATH)),
+  cert: fs.readFileSync(path.resolve(process.env.SSL_CERT_PATH))
+};
 
-// const options = {
-//   cert,
-//   key
-// };
-
-const server = http.createServer(app);
+// Custom HTTPS agent for Axios
+const agent = new https.Agent({
+  rejectUnauthorized: false // DO NOT use in production
+});
 
 app.use(cors());
 
 app.get('/getclcodes', (req, res)=>{
 
-  var path = 'http://127.0.0.1:5000/getclcodes';
+  var path = 'https://127.0.0.1:8443/getclcodes';
   axios.get(path, {
+    'httpsAgent':agent,
     headers: {
       'Content-Type': 'application/json' // Not typically needed for GET requests
     }
@@ -87,6 +89,8 @@ app.get('/getrecommendation', (req, res) => {
     res.status(500).send('An error occurred while fetching data from the server.');
   });
 });
-server.listen(3000, () => {
-  console.log('Server listening on port 3000');
+
+// Create HTTPS server
+https.createServer(sslOptions, app).listen(443, () => {
+  console.log('HTTPS server running on port 443');
 });
