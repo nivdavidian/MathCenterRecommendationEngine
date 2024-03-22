@@ -1,21 +1,32 @@
 import dbAPI
 import service
 import time
+import logging
 from flask import Flask, request, jsonify, abort, g, make_response
+from logging.handlers import RotatingFileHandler
 # from flask_cors import CORS
 
 app = Flask(__name__)
 # CORS(app)  # This enables CORS for all routes and origins
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+file_handler = RotatingFileHandler('gunicorn.log', maxBytes=1024 * 1024 * 100, backupCount=20)
+formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+
 @app.before_request
 def before_request():
     g.start_time = time.time()
-    app.logger.info(f'content Length:{request.content_length}')
+    logger.info(f'content Length:{request.content_length}')
     
 @app.after_request
 def after_request(response):
     duration = time.time() - g.start_time
-    app.logger.info(f"{request.path} took {duration}")
+    logger.info(f"{request.path} took {duration}")
     return response
 
 @app.route("/getpages")
@@ -31,7 +42,7 @@ def get_pages():
             worksheet = {"worksheet_name": row[1], "worksheet_id": row[0]}
             worksheets.append(worksheet)
     except Exception as e:
-        app.logger.error(f"get Pages:\n{e}")
+        logger.error(f"get Pages:\n{e}")
         return abort(500, "Error")
     
     return jsonify(worksheets)
@@ -50,7 +61,7 @@ def get_cl_codes():
             
         return jsonify(cl_codes)
     except Exception as e:
-        app.logger.error(f"get cl codes:\n{e}")
+        logger.error(f"get cl codes:\n{e}")
         return abort(500, "Error")
     
         
@@ -64,7 +75,7 @@ def get_recommendation():
         rec = service.recommend(worksheet_uid, c_code=c_code, l_code=l_code)
         return jsonify(rec)
     except Exception as e:
-        app.logger.error(e)
+        logger.error(e)
         return abort(500, "Error")
     
         
@@ -78,7 +89,7 @@ def get_recommendation_user():
         rec = service.recommend_users_alike(already_watched, worksheet_uids, c_code=c_code, l_code=l_code)
         return jsonify(rec)
     except Exception as e:
-        app.logger.error(e)
+        logger.error(e)
         return abort(500, "Error")
     
 @app.route('/updaterecommendations', methods=['POST'])
@@ -87,7 +98,7 @@ def update_recommendations():
         service.update_files_recommendations(request.json)
         return make_response("OK", 200)
     except Exception as e:
-        app.logger.error(e)
+        logger.error(e)
         return abort(500, "Error")
         
         

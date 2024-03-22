@@ -21,15 +21,15 @@ def recommend_users_alike(already_watched, worksheet_uids, c_code, l_code):
         top_n_sim = uss.top_n_sim_users(user_similarity, score_above=score_above)
         users_worksheets, _ = uss.get_user_worksheets(top_n_sim, c_code, l_code, index=index)
         users_worksheets = users_worksheets.drop_duplicates()
-        users_worksheets = list(filter(lambda x: x not in worksheet_uids and x not in already_watched, users_worksheets))
+        users_worksheets = users_worksheets[~users_worksheets.isin(already_watched+worksheet_uids)]
         
-        if len(users_worksheets) >= N or score_above <= 0.3:
+        if users_worksheets.size >= N or score_above <= 0.3:
             # print(len(users_worksheets), score_above)
             # return popular or alike the last page
             break
         score_above -= 0.15
-    
-    return random.sample(users_worksheets, (min(len(users_worksheets), N)))
+    # print("1")
+    return users_worksheets.sample(min(users_worksheets.size, N)).to_list()
 
 def update_files_recommendations(json):
     analyzers = AnalyzerFactory.create_instance(**json)
