@@ -1,15 +1,11 @@
 import pandas as pd
 import json
-import datetime
 import dbAPI
 import numpy as np
 import os
-import sql_pool
-from wrapper import Wrapper
 
 from enum import Enum
 from sklearn.metrics.pairwise import cosine_similarity
-from concurrent.futures import ThreadPoolExecutor
 
 class Grade(Enum):
     prek = 0
@@ -26,9 +22,7 @@ class Grade(Enum):
     tenth = 11
 
 class EnumManipulation:
-    
-    def __init__(self) -> None:
-        self.str_to_enum_value_map = {
+    str_to_enum_value_map = {
             "pre-k": 0,
             "kindergarten": 1,
             "1st": 2,
@@ -42,16 +36,27 @@ class EnumManipulation:
             "9th": 10,
             "10th": 11
             }
+    @classmethod
+    def convert_to_enum_value(cls, grade_str):
+        return cls.str_to_enum_value_map[grade_str]
     
-    def convert_to_enum_value(self, grade_str):
-        return self.str_to_enum_value_map[grade_str]
-    
-    def enum_names_by_value(self, values):
+    @classmethod
+    def enum_names_by_value(cls, values):
         names = []
         for value in values:
             names.append(Grade(value).name)
         
         return names
+    
+    @classmethod
+    def isin(cls, min_grade, max_grade, isin):
+        min_grade = cls.convert_to_enum_value(min_grade)
+        max_grade = cls.convert_to_enum_value(max_grade)
+        
+        if isin >= min_grade and isin <= max_grade:
+            return True
+        else:
+            return False
     
     
 
@@ -88,11 +93,10 @@ def analyze_downloads():
     df3.drop_duplicates()
 
 def calculate_cos_sim_by_country(c_code, l_code):
-    enum_man = EnumManipulation()
     
     df2 = pd.DataFrame(dbAPI.get_worksheet_grades_by_country_lang(c_code, l_code), columns=["worksheet_uid", "min_grade", "max_grade"])
-    df2["min_grade"] = df2["min_grade"].apply(enum_man.convert_to_enum_value)
-    df2["max_grade"] = df2["max_grade"].apply(enum_man.convert_to_enum_value)
+    df2["min_grade"] = df2["min_grade"].apply(EnumManipulation.convert_to_enum_value)
+    df2["max_grade"] = df2["max_grade"].apply(EnumManipulation.convert_to_enum_value)
     
     uniq_pages = df2["worksheet_uid"].unique()
     
@@ -147,7 +151,7 @@ def top_n_cos_sim(df: pd.DataFrame, n):
 
     return top_10_df
 
-def analyze_interactive(c_code, l_code):
+def analyze_interactive(c_code, l_code, step=5):
     res = dbAPI.get_interactive_by_clcodes(c_code, l_code)
     if res == None or len(res) == 0:
         print("something went wrong")
@@ -168,9 +172,8 @@ def analyze_interactive(c_code, l_code):
     d2 = groupby.apply(lambda group: [i for i in group["worksheet_uid"]], include_groups=False).to_frame().reset_index()
     d2.columns = ['user_uid', "worksheets"]
     d2 = d2[d2['user_uid'].isin(df2.index)].reset_index(drop=True)
-    n=10
-    step = int(n/2)
-    d2['worksheets'] = d2['worksheets'].apply(lambda g: [g[i*step:min(len(g),i*step+n)] for i in range(int(len(g)/step) if len(g)>=step else 1)])
+    n = step*2
+    d2['worksheets'] = d2['worksheets'].apply(lambda g: [g[i*step:min(len(g),i*step+n)] for i in range(int(len(g)/step) if len(g)>=step else 1)] + [g])
     d2 = d2.explode('worksheets').reset_index(drop=True)
     def get_index(size):
         for i in range(size):
@@ -192,6 +195,67 @@ def analyze_interactive(c_code, l_code):
     os.makedirs("./worksheet_users_indexes", exist_ok=True)
     df.to_parquet(f"./worksheet_users_indexes/{c_code}-{l_code}.parquet")
     # df.to_csv(f"./worksheet_users_indexes/{c_code}-{l_code}.csv")
+    
+def difference_in_mean(c_code, l_code):
+    res = dbAPI.get_interactive_by_clcodes(c_code, l_code)
+    if res == None or len(res) == 0:
+        print("something went wrong")
+    
+    df = pd.DataFrame(res, columns=["user_uid", "worksheet_uid", "l_code", "c_code", "time"]).drop_duplicates().reset_index(drop=True)
+    df["time"] = pd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
+    df = df.drop(["c_code", "l_code"], axis=1)
+    
+    df = pd.merge(df, df, on="user_uid", suffixes=["1","2"])
+    df = df[df["worksheet_uid1"]!=df["worksheet_uid2"]]
+    df["time"] = (df["time1"] - df["time2"]).apply(lambda x: abs(x.days))
+    df = df.drop(columns=["time1", "time2", "user_uid"])
+    # print(df.head(3))
+    df = df.groupby(by=["worksheet_uid1", "worksheet_uid2"]).mean().rename(columns={"time": "mean"}).sort_values(by="mean", ascending=True).reset_index()
+    df = df[(df["mean"]>0) & (df["mean"]<100)]
+    df.to_csv("111.csv")
+    # print(df.head(3))
+    
+def markov(c_code, l_code):
+    res = dbAPI.get_interactive_by_clcodes(c_code, l_code)
+    if res == None or len(res) == 0:
+        print("something went wrong")
+    
+    df = pd.DataFrame(res, columns=["user_uid", "worksheet_uid", "l_code", "c_code", "time"]).drop_duplicates().reset_index(drop=True)
+    df["time"] = pd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
+    df = df.drop(["c_code", "l_code"], axis=1)
+    
+    df = pd.merge(df, df, on="user_uid", suffixes=["1","2"])
+    df = df[df["worksheet_uid1"]!=df["worksheet_uid2"]]
+    df["time"] = (df["time1"] - df["time2"]).apply(lambda x: abs(x.days))
+    df = df.drop(columns=["time1", "time2", "user_uid"])
+    df = df[df["time"]<2]
+    # print(df.head(3))
+    df = df.groupby(by=["worksheet_uid1", "worksheet_uid2"], sort=False).count().rename(columns={"time": "count"})
+    df = df.sort_values("count", ascending=False)
+    df['count'] = df["count"]/df["count"].max()
+    df = df.groupby(by='worksheet_uid1',sort=False).apply(lambda g: [[data['worksheet_uid2'], data['count']] for _, data in g.iterrows()])
+    df.to_csv("111.csv")
+    # print(df.head(3))
+    
+def popular_in_month(c_code, l_code):
+    res = dbAPI.get_interactive_by_clcodes(c_code, l_code)
+    if res == None or len(res) == 0:
+        print("something went wrong")
+    df = pd.DataFrame(res, columns=["user_uid", "worksheet_uid", "l_code", "c_code", "time"]).drop_duplicates().reset_index(drop=True)
+    df["month"] = pd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S").apply(lambda x: x.month)
+    df = df.drop(columns=["c_code", "l_code", "user_uid", "time"])
+    df['count'] = 0
+    df = df.groupby(by=['worksheet_uid', 'month'], sort=False).count().reset_index().sort_values(by=['month', 'count'], ascending=[True, False])
+    
+    df2 = pd.DataFrame(dbAPI.get_worksheet_grades_by_uids(df['worksheet_uid'].unique(), c_code, l_code), columns=['worksheet_uid', 'min_grade', 'max_grade'])
+    
+    df = pd.merge(df, df2, on='worksheet_uid')
+    df['grades'] = df.apply(lambda x: EnumManipulation.enum_names_by_value(list(range(EnumManipulation.convert_to_enum_value(x['min_grade']), EnumManipulation.convert_to_enum_value(x['max_grade'])+1))), axis=1)
+    df = df.drop(columns=['min_grade', 'max_grade']).explode('grades')
+    
+    df = pd.get_dummies(df, columns=['grades'], prefix="", prefix_sep="").groupby(level=0).max()['a']
+    os.makedirs('most_populars')
+    df.to_parquet(f"{c_code}-{l_code}.parquet")
 
 def task(c_code, l_code, n):
     cos_df = calculate_cos_sim_by_country(c_code, l_code)

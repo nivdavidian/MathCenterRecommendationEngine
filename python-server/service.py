@@ -1,8 +1,10 @@
 import userSimilarityClass as uss
-import random
+import pandas as pd
+from filter_manager import FilterFactory
 from pageclass import Worksheet
 from analyzer import AnalyzerFactory
 from wrapper import wrap
+
 
 
 
@@ -35,6 +37,13 @@ def update_files_recommendations(json):
     analyzers = AnalyzerFactory.create_instance(**json)
     wrapper = wrap(analyzers)
     wrapper.run()
+    
+def most_popular_in_month(**kwargs):
+    filter = FilterFactory.create_instance(**kwargs.get('filters', {}))
+    df = filter.run(pd.read_parquet('111.parquet')).sort_values(by='count', ascending=False).reset_index(drop=True)
+    df = df['worksheet_uid'].head(10)
+    return df.tolist()
+    
     
     
         

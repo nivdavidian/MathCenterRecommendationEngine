@@ -1,6 +1,7 @@
 import datetime
 import sql_pool
 import pandas as pd
+import numpy as np
 
 def get_page_topics_by_uid(pages_uid):
     sql = "SELECT * FROM topics WHERE worksheet_uid IN (%s)"
@@ -58,6 +59,21 @@ def get_all_worksheet_grades():
     cursor.close()
     sql_pool.release_connection(conn)
     return res
+
+def get_worksheet_grades_by_uids(worksheets, c_code, l_code):
+    try:
+        conn = sql_pool.get_connection()
+        cursor = conn.cursor()
+        qm = ",".join(np.full(len(worksheets), "%s"))
+        cursor.execute(f"SELECT page_uid, min_grade, max_grade FROM worksheet_grades WHERE country_code = %s AND language_code = %s AND page_uid IN ({qm})", (c_code, l_code)+tuple(worksheets))
+        res = cursor.fetchall()
+        return res
+    except Exception as e:
+        print(e)
+        raise e
+    finally:
+        cursor.close()
+        sql_pool.release_connection(conn)
 
 def get_worksheet_grades_by_country_lang(c_code, l_code):
     conn = sql_pool.get_connection()

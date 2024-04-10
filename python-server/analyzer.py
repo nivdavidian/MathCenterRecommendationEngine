@@ -37,9 +37,10 @@ class UsersSimilarityAnalyzer(Analyzer):
         super().__init__()
         self.c_code = kwargs.get('c_code')
         self.l_code = kwargs.get('l_code')
+        self.step_size = kwargs.get('step_size')
     
     def analyze(self):
-        analyze_interactive(self.c_code, self.l_code)
+        analyze_interactive(self.c_code, self.l_code, step=self.step_size)
     def run(self):
         super().run(self.analyze)
     
@@ -78,7 +79,8 @@ class AnalyzerFactory(AbstractFactory):
             if name == "PagesSimilarity":
                 analyzers.extend([PagesSimilarityAnalyzer(c_code=cl_code[0], l_code=cl_code[1], n=options_copy['n']) for cl_code in options_copy['cl_codes']])
             elif name == "UserSimilarity":
-                analyzers.extend([UsersSimilarityAnalyzer(c_code=cl_code[0], l_code=cl_code[1]) for cl_code in options_copy['cl_codes']])
+                step_size = int(options_copy.get("step_size", 5))
+                analyzers.extend([UsersSimilarityAnalyzer(c_code=cl_code[0], l_code=cl_code[1], step_size=step_size) for cl_code in options_copy['cl_codes']])
             else:
                 raise Exception(f"Analyzing job named, {name} does not exist")
         

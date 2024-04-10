@@ -100,6 +100,15 @@ def update_recommendations():
     except Exception as e:
         logger.error(e)
         return abort(500, "Error")
+
+@app.route('/mostpopular', methods=['POST'])
+def most_popular():
+    try:
+        populars = service.most_popular_in_month(**request.json)
+        return jsonify(populars)
+    except Exception as e:
+        logger.error(e)
+        return abort(500, "Error")
         
         
     
