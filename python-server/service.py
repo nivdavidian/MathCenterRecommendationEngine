@@ -40,7 +40,10 @@ def update_files_recommendations(json):
     
 def most_popular_in_month(**kwargs):
     filter = FilterFactory.create_instance(**kwargs.get('filters', {}))
-    df = filter.run(pd.read_parquet('111.parquet')).sort_values(by='count', ascending=False).reset_index(drop=True)
+    c_code, l_code = kwargs.get('c_code', None), kwargs.get('l_code', None)
+    if not c_code or not l_code:
+        raise Exception('c_code and l_code must be send in json body')
+    df = filter.run(pd.read_parquet(f'most_populars/{c_code}-{l_code}.parquet')).sort_values(by='count', ascending=False).reset_index(drop=True)
     df = df['worksheet_uid'].head(10)
     return df.tolist()
     

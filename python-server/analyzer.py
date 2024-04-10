@@ -1,6 +1,6 @@
 from factory import AbstractFactory
 from abc import ABC, abstractmethod
-from analyticsOnExcel import analyze_interactive, task
+from analyticsOnExcel import analyze_interactive, task, popular_in_month
 from wrapper import Wrapper
 import dbAPI
 
@@ -43,7 +43,16 @@ class UsersSimilarityAnalyzer(Analyzer):
         analyze_interactive(self.c_code, self.l_code, step=self.step_size)
     def run(self):
         super().run(self.analyze)
-    
+        
+class MostPopular(Analyzer):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.c_code = kwargs.get('c_code')
+        self.l_code = kwargs.get('l_code')
+    def analyze(self):
+        popular_in_month(self.c_code, self.l_code)
+    def run(self):
+        super().run(self.analyze)
     
 
 class AnalyzerFactory(AbstractFactory):
@@ -81,6 +90,8 @@ class AnalyzerFactory(AbstractFactory):
             elif name == "UserSimilarity":
                 step_size = int(options_copy.get("step_size", 5))
                 analyzers.extend([UsersSimilarityAnalyzer(c_code=cl_code[0], l_code=cl_code[1], step_size=step_size) for cl_code in options_copy['cl_codes']])
+            elif name == "MostPopular":
+                analyzers.extend([MostPopular(c_code=cl_code[0], l_code=cl_code[1]) for cl_code in options_copy['cl_codes']])
             else:
                 raise Exception(f"Analyzing job named, {name} does not exist")
         

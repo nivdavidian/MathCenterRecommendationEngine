@@ -254,9 +254,9 @@ def popular_in_month(c_code, l_code):
     df['grades'] = df.apply(lambda x: EnumManipulation.enum_names_by_value(list(range(EnumManipulation.convert_to_enum_value(x['min_grade']), EnumManipulation.convert_to_enum_value(x['max_grade'])+1))), axis=1)
     df = df.drop(columns=['min_grade', 'max_grade']).explode('grades')
     
-    df = pd.get_dummies(df, columns=['grades'], prefix="", prefix_sep="").groupby(level=0).max()['a']
-    os.makedirs('most_populars')
-    df.to_parquet(f"{c_code}-{l_code}.parquet")
+    df = pd.get_dummies(df, columns=['grades'], prefix="", prefix_sep="").groupby(level=0).max()
+    os.makedirs('most_populars', exist_ok=True)
+    df.to_parquet(f"most_populars/{c_code}-{l_code}.parquet")
 
 def task(c_code, l_code, n):
     cos_df = calculate_cos_sim_by_country(c_code, l_code)
