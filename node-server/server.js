@@ -6,7 +6,6 @@ const fs = require('fs');
 const axios = require('axios');
 const cors = require('cors');
 const path = require('path');
-
 const app = express();
 
 const sslOptions = {
@@ -20,7 +19,6 @@ const agent = new https.Agent({
 });
 
 app.use(cors());
-
 app.get('/getclcodes', (req, res)=>{
 
   var path = 'https://127.0.0.1:8443/getclcodes';
