@@ -92,6 +92,7 @@ def analyze_downloads():
     df3 = df3[["country_code", "language_code", "worksheet_uid", "month"]]
     df3.drop_duplicates()
 
+#Calculates the cosine similarity between worksheet vectors based on topics and grade levels. This is useful for finding similar worksheets.
 def calculate_cos_sim_by_country(c_code, l_code):
     
     df2 = pd.DataFrame(dbAPI.get_worksheet_grades_by_country_lang(c_code, l_code), columns=["worksheet_uid", "min_grade", "max_grade"])
