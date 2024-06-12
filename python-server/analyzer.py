@@ -1,6 +1,6 @@
 from factory import AbstractFactory
 from abc import ABC, abstractmethod
-from analyticsOnExcel import analyze_interactive, task, popular_in_month
+from analyticsOnExcel import interactive_user_similarity_analysis, task, popular_in_month
 from wrapper import Wrapper
 import dbAPI
 
@@ -35,12 +35,11 @@ class UsersSimilarityAnalyzer(Analyzer):
     
     def __init__(self, **kwargs):
         super().__init__()
-        self.c_code = kwargs.get('c_code')
-        self.l_code = kwargs.get('l_code')
+        self.data = kwargs.get('data')
         self.step_size = kwargs.get('step_size')
     
     def analyze(self):
-        analyze_interactive(self.c_code, self.l_code, step=self.step_size)
+        interactive_user_similarity_analysis(self.data, step=self.step_size)
     def run(self):
         super().run(self.analyze)
         
@@ -63,20 +62,15 @@ class AnalyzerFactory(AbstractFactory):
             'cl_codes': 'all', 
             'n': 50,
         }
-        analyzers_info = kwargs.get("analyzers_info")
         
-        if not analyzers_info:
-            raise Exception("Need to send analyzers_info as argument (analyzers_info=?:dict)")
-        if not isinstance(analyzers_info, dict):
-            raise Exception("analyzers_info of not type dict")
-        if 'analyzers' not in analyzers_info or len(analyzers_info.get('analyzers')) == 0:
-            raise('\'analyzers\' key missing in analyzers_info or is empty')
+        if 'analyzers' not in kwargs or len(kwargs.get('analyzers')) == 0:
+            raise('\'analyzers\' missing')
         
         cl_codes = list(map(lambda x: list(x), dbAPI.get_distinct_cl_codes()))
-        options.update(analyzers_info.get('global_options', {}))
+        options.update(kwargs.get('global_options', {}))
         
         analyzers = []
-        for name, info in analyzers_info.get('analyzers').items():
+        for name, info in kwargs.get('analyzers').items():
             options_copy = options.copy()
             options_copy.update(info.get('options', {}))
             if options_copy.get('cl_codes') == 'all':
@@ -89,7 +83,7 @@ class AnalyzerFactory(AbstractFactory):
                 analyzers.extend([PagesSimilarityAnalyzer(c_code=cl_code[0], l_code=cl_code[1], n=options_copy['n']) for cl_code in options_copy['cl_codes']])
             elif name == "UserSimilarity":
                 step_size = int(options_copy.get("step_size", 5))
-                analyzers.extend([UsersSimilarityAnalyzer(c_code=cl_code[0], l_code=cl_code[1], step_size=step_size) for cl_code in options_copy['cl_codes']])
+                analyzers.extend([UsersSimilarityAnalyzer(data=dbAPI.get_interactive_by_clcodes(cl_code[0], cl_code[1]), step_size=step_size) for cl_code in options_copy['cl_codes']])
             elif name == "MostPopular":
                 analyzers.extend([MostPopular(c_code=cl_code[0], l_code=cl_code[1]) for cl_code in options_copy['cl_codes']])
             else:

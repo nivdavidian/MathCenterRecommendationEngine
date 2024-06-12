@@ -40,7 +40,6 @@ class MonthFilter(Filter):
         self.months = options['months']
     def filter(self, df):
         df = self.pre_process(df)
-        print(self.months)
         return df[df['month'].isin(self.months)]
     def pre_process(self, df):
         df = super().pre_process(df)

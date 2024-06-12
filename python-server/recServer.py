@@ -4,10 +4,10 @@ import time
 import logging
 from flask import Flask, request, jsonify, abort, g, make_response
 from logging.handlers import RotatingFileHandler
-# from flask_cors import CORS
+from flask_cors import CORS
 
 app = Flask(__name__)
-# CORS(app)  # This enables CORS for all routes and origins
+CORS(app)  # This enables CORS for all routes and origins
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -37,27 +37,22 @@ def get_pages():
         l_code = request.args.get("lCode", "", type=str)
         print(request.args)
         results = dbAPI.get_recommend_search(term,l_code, c_code)
-        worksheets = []
-        for row in results:
-            worksheet = {"worksheet_name": row[1], "worksheet_id": row[0]}
-            worksheets.append(worksheet)
+            
+        results = service.get_worksheets_info([res[0] for res in results], c_code, l_code)
+        return jsonify(results)
     except Exception as e:
         logger.error(f"get Pages:\n{e}")
         return abort(500, "Error")
-    
-    return jsonify(worksheets)
 
 @app.route("/getclcodes")
 def get_cl_codes():
     try:
         codes = dbAPI.get_distinct_cl_codes()
         
-        cl_codes = {}
+        cl_codes = []
         for row in codes:
             c_code, l_code = row[0], row[1]
-            arr = cl_codes.get(c_code, [])
-            arr.append(l_code)
-            cl_codes[c_code] = arr
+            cl_codes.append(f'{c_code}-{l_code}')
             
         return jsonify(cl_codes)
     except Exception as e:
@@ -87,6 +82,8 @@ def get_recommendation_user():
         c_code = request.json["cCode"]
         l_code = request.json["lCode"]
         rec = service.recommend_users_alike(already_watched, worksheet_uids, c_code=c_code, l_code=l_code)
+        rec = service.get_worksheets_info(rec, c_code, l_code)
+        rec = list(rec.values)
         return jsonify(rec)
     except Exception as e:
         logger.error(e)
@@ -109,9 +106,6 @@ def most_popular():
     except Exception as e:
         logger.error(e)
         return abort(500, "Error")
-        
-        
-    
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

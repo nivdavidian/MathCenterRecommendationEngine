@@ -1,6 +1,6 @@
 // ignore_for_file: sized_box_for_whitespace
 import 'package:flutter/material.dart';
-import 'package:recui/HomePage.dart';
+import 'package:recui/ChooseAlg.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -21,9 +21,9 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Login Page"),
-        actions: [
-          IconButton(onPressed: () {}, icon: const Icon(Icons.favorite))
-        ],
+        // actions: [
+        //   IconButton(onPressed: () {}, icon: const Icon(Icons.favorite))
+        // ],
         backgroundColor: Colors.blue[50],
       ),
       body: Column(
@@ -75,7 +75,7 @@ class _LoginPageState extends State<LoginPage> {
                 if (_username == "niv" && _password == "123") {
                   Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => const HomePage()),
+      MaterialPageRoute(builder: (context) => const ChooseAlg()),
     );
                 }
                 else{

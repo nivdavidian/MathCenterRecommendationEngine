@@ -3,6 +3,31 @@ import sql_pool
 import pandas as pd
 import numpy as np
 
+
+def get_worksheet_info(uids, c_code, l_code):
+    place_holders = ", ".join(list(map(lambda _: "%s", uids)))
+    sql = f"""SELECT topics.worksheet_uid, topics.topic, worksheet_grades.min_grade, worksheet_grades.max_grade, worksheet_titles.title FROM 
+    topics
+    JOIN
+    worksheet_grades ON topics.worksheet_uid = worksheet_grades.page_uid
+    JOIN
+    worksheet_titles ON worksheet_titles.uid = worksheet_grades.page_uid AND worksheet_titles.language_code = worksheet_grades.language_code
+    WHERE worksheet_grades.country_code = %s AND worksheet_grades.language_code = %s AND topics.worksheet_uid IN ({place_holders})
+    """
+    try:
+        conn = sql_pool.get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute(sql, (c_code, l_code)+tuple(uids))
+        
+        res = cursor.fetchall()
+        return res
+    except Exception as e:
+        raise e
+    finally:
+        cursor.close()
+        sql_pool.release_connection(conn)
+        
 def get_page_topics_by_uid(pages_uid):
     sql = "SELECT * FROM topics WHERE worksheet_uid IN (%s)"
     place_holders = ", ".join(f"\'{uid}\'"for uid in pages_uid)
@@ -194,7 +219,6 @@ def get_distinct_cl_codes():
     cursor.execute(sql)
     
     res = cursor.fetchall()
-    print(len(res))
     if res == None:
         res = []
     

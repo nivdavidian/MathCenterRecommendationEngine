@@ -14,8 +14,11 @@ def calculate_user_similarity(worksheet_uids, c_code, l_code):
     Y = pd.get_dummies(worksheets).groupby(level=0).max()
             
     X = pd.DataFrame(0, index=[1], columns=Y.columns)
-    X.loc[1, worksheet_uids] = 1
     
+    # print(worksheet_uids)
+    if X.shape[1] == 0:
+        return pd.DataFrame([[0]]), index
+    X.loc[1, Y.columns[Y.columns.isin(worksheet_uids)]] = 1
     cos_sim = cosine_similarity(X.values, Y.values)
     cos_sim = pd.DataFrame(cos_sim, index=[1], columns=Y.index)
     return cos_sim, index
@@ -41,7 +44,7 @@ def get_worksheets_users(worksheet_uids, c_code, l_code):
     path = f"./worksheet_users_indexes/{c_code}-{l_code}.parquet"
     users_index = dbAPI.get_file_df(path)
     
-    users = users_index.loc[worksheet_uids, "users"]
+    users = users_index.loc[users_index.index[users_index.index.isin(worksheet_uids)], "users"]
     users = users.apply(lambda x: x.split(","))
     users = users.explode().drop_duplicates()
     
