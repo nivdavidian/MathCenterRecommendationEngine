@@ -17,14 +17,34 @@ class _UserSimilarityPageState extends State<UserSimilarityPage> {
   var pages = List<MathCenterPage>.empty(growable: true);
 
   var searchString = "";
-  var cCode = "IL";
-  var lCode = "he";
 
   var isLoading = false;
+
+  var clCodes = List<String>.empty(growable: true);
+
+  var selectedClCode = '';
 
   @override
   void initState() {
     super.initState();
+    getClCodes();
+  }
+
+  void getClCodes() async {
+    var url = Uri.parse('http://127.0.0.1:5000/getclcodes');
+    var response = await http.get(url);
+    if (response.statusCode == 200) {
+      // If the server returns a 200 OK response, then parse the JSON.
+      List<dynamic> data = json.decode(response.body);
+      setState(() {
+        clCodes = data.map<String>((e) => e).toList();
+        clCodes.sort();
+      });
+    } else {
+      // If the server did not return a 200 OK response,
+      // then throw an exception.
+      log("${response.statusCode}");
+    }
   }
 
   void updateChosenHistory(List<MathCenterPage> chosenHistory) {
@@ -54,7 +74,45 @@ class _UserSimilarityPageState extends State<UserSimilarityPage> {
       body: Stack(
         children: [
           Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: Text(
+                        'Choose cl-code',
+                        style: TextStyle(
+                          fontStyle: FontStyle.italic,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14.0,
+                        ),
+                      ),
+                    ),
+                    ...List.generate(
+                      clCodes.length,
+                      (index) => Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: ChoiceChip.elevated(
+                          label: Text(
+                            clCodes[index],
+                            style: const TextStyle(fontSize: 12.0),
+                          ),
+                          selected: clCodes[index] == selectedClCode,
+                          onSelected: (value) {
+                            setState(() {
+                              selectedClCode = clCodes[index];
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -65,6 +123,8 @@ class _UserSimilarityPageState extends State<UserSimilarityPage> {
                         IconButton(
                           icon: const Icon(Icons.search),
                           onPressed: () {
+                            var splitCl = selectedClCode.split("-");
+                            var cCode = splitCl[0], lCode = splitCl[1];
                             searchPage(searchString, cCode, lCode);
                           },
                         )
@@ -75,6 +135,8 @@ class _UserSimilarityPageState extends State<UserSimilarityPage> {
                         searchString = value;
                       },
                       onSubmitted: (value) {
+                        var splitCl = selectedClCode.split("-");
+                        var cCode = splitCl[0], lCode = splitCl[1];
                         searchPage(searchString, cCode, lCode);
                       },
                     ),
@@ -130,7 +192,8 @@ class _UserSimilarityPageState extends State<UserSimilarityPage> {
                       MaterialPageRoute(
                           builder: (context) =>
                               UserSimilarityRecommendationPage(
-                                  chosenHistory: chosenHistory)));
+                                  chosenHistory: chosenHistory,
+                                  clCode: selectedClCode)));
                 },
                 style: ButtonStyle(
                   backgroundColor: MaterialStateProperty.all(Colors.pink[100]),
@@ -160,6 +223,7 @@ class _UserSimilarityPageState extends State<UserSimilarityPage> {
     if (response.statusCode == 200) {
       // If the server returns a 200 OK response, then parse the JSON.
       List<dynamic> data = json.decode(response.body);
+      // print(data);
       setState(() {
         isLoading = false;
         pages = data.map((e) => MathCenterPage.fromJson(e)).toList();
@@ -269,9 +333,10 @@ class _HistoryPageState extends State<HistoryPage> {
 
 class UserSimilarityRecommendationPage extends StatefulWidget {
   const UserSimilarityRecommendationPage(
-      {super.key, required this.chosenHistory});
+      {super.key, required this.chosenHistory, required this.clCode});
 
   final List<MathCenterPage> chosenHistory;
+  final String clCode;
 
   @override
   State<UserSimilarityRecommendationPage> createState() =>
@@ -324,11 +389,12 @@ class _UserSimilarityRecommendationPageState
                                   (index) => TextButton(
                                     onPressed: () {
                                       showModalBottomSheet(
-                                      context: context,
-                                      builder: (context) {
-                                        return PageSheetInfo(
-                                            page: widget.chosenHistory[index]);
-                                      });
+                                          context: context,
+                                          builder: (context) {
+                                            return PageSheetInfo(
+                                                page: widget
+                                                    .chosenHistory[index]);
+                                          });
                                     },
                                     child:
                                         Text(widget.chosenHistory[index].name),
@@ -369,12 +435,16 @@ class _UserSimilarityRecommendationPageState
     setState(() {
       isLoading = true;
     });
+
+    var splitCl = widget.clCode.split("-");
+    var cCode = splitCl[0], lCode = splitCl[1];
+
     var url = Uri.parse('http://127.0.0.1:5000/recuseralike');
     var body = jsonEncode({
       "already_watched": [],
       "worksheet_uids": (widget.chosenHistory.map((e) => e.uid).toList()),
-      "cCode": "IL",
-      "lCode": "he",
+      "cCode": cCode,
+      "lCode": lCode,
     });
     var headers = {"Content-Type": "application/json"};
     var response = await http.post(url, body: body, headers: headers);
@@ -411,28 +481,28 @@ class PageSheetInfo extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          SelectableText(
             page.name,
             style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          Text(
+          SelectableText(
             'UID: ${page.uid}',
             style: const TextStyle(fontSize: 16),
           ),
           const SizedBox(height: 8),
-          Text(
+          SelectableText(
             'Grade Range: ${page.minGrade} - ${page.maxGrade}',
             style: const TextStyle(fontSize: 16),
           ),
           const SizedBox(height: 8),
-          const Text(
+          const SelectableText(
             'Topics:',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           for (var topic in page.topics)
-            Text(
+            SelectableText(
               '- $topic',
               style: const TextStyle(fontSize: 16),
             ),

@@ -1,8 +1,6 @@
 import 'dart:convert';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 import 'package:recui/UserSimilarityPage.dart';
 
@@ -36,8 +34,8 @@ class _MostPopularPageState extends State<MostPopularPage> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(child: CustomPopularSearch(clCodes: clCodes)),
-          MostPopularByCL(clCodes: clCodes),
+          CustomPopularSearch(clCodes: clCodes),
+          // MostPopularByCL(clCodes: clCodes),
         ],
       ),
     );
@@ -167,15 +165,13 @@ class _CustomPopularSearchState extends State<CustomPopularSearch> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        TextButton.icon(
+        TextButton(
           onPressed: () {
             setState(() {
               isMakingCustom = !isMakingCustom;
             });
           },
-          icon: Icon(
-              isMakingCustom ? Icons.arrow_drop_up : Icons.arrow_drop_down),
-          label: const Text(
+          child: const Text(
             "Custom Popular Search",
             style: TextStyle(
                 fontStyle: FontStyle.italic,
@@ -183,180 +179,174 @@ class _CustomPopularSearchState extends State<CustomPopularSearch> {
                 fontWeight: FontWeight.bold),
           ),
         ),
-        ...(!isMakingCustom
-            ? [const SizedBox()]
-            : [
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Text(
-                          'Choose cl-code',
-                          style: TextStyle(
-                            fontStyle: FontStyle.italic,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14.0,
-                          ),
-                        ),
-                      ),
-                      ...List.generate(
-                        widget.clCodes.length,
-                        (index) => Padding(
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Text(
+                  'Choose cl-code',
+                  style: TextStyle(
+                    fontStyle: FontStyle.italic,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14.0,
+                  ),
+                ),
+              ),
+              ...List.generate(
+                widget.clCodes.length,
+                (index) => Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ChoiceChip.elevated(
+                    label: Text(
+                      widget.clCodes[index],
+                      style: const TextStyle(fontSize: 12.0),
+                    ),
+                    selected: widget.clCodes[index] == selectedClCode,
+                    onSelected: (value) {
+                      setState(() {
+                        selectedClCode = widget.clCodes[index];
+                      });
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Text(
+                  'Choose grades',
+                  style: TextStyle(
+                    fontStyle: FontStyle.italic,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14.0,
+                  ),
+                ),
+              ),
+              ...List.generate(
+                grades.length,
+                (index) => Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ChoiceChip.elevated(
+                    label: Text(
+                      grades[index],
+                      style: const TextStyle(fontSize: 12.0),
+                    ),
+                    selected: selectedGrades
+                        .any((element) => element == grades[index]),
+                    onSelected: (value) {
+                      setState(() {
+                        if (value) {
+                          selectedGrades.add(grades[index]);
+                        } else {
+                          selectedGrades.remove(grades[index]);
+                        }
+                      });
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Text(
+                  'Choose months',
+                  style: TextStyle(
+                    fontStyle: FontStyle.italic,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14.0,
+                  ),
+                ),
+              ),
+              ...List.generate(
+                months.length,
+                (index) => Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ChoiceChip.elevated(
+                    label: Text(
+                      '${months[index]}',
+                      style: const TextStyle(fontSize: 12.0),
+                    ),
+                    selected: selectedMonths
+                        .any((element) => element == months[index]),
+                    onSelected: (value) {
+                      setState(() {
+                        if (value) {
+                          selectedMonths.add(months[index]);
+                        } else {
+                          selectedMonths.remove(months[index]);
+                        }
+                      });
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Center(
+          child: TextButton(
+              onPressed: () {
+                recommendMostPopular();
+              },
+              child: const Text("Recommend")),
+        ),
+        const Text(
+          "Results",
+          style: TextStyle(
+              fontStyle: FontStyle.italic,
+              fontSize: 20.0,
+              fontWeight: FontWeight.bold),
+        ),
+        SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: List.generate(
+                  mostPopulars.length,
+                  (index) => Card(
+                        child: Padding(
                           padding: const EdgeInsets.all(8.0),
-                          child: ChoiceChip.elevated(
-                            label: Text(
-                              widget.clCodes[index],
-                              style: const TextStyle(fontSize: 12.0),
-                            ),
-                            selected: widget.clCodes[index] == selectedClCode,
-                            onSelected: (value) {
-                              setState(() {
-                                selectedClCode = widget.clCodes[index];
-                              });
-                            },
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              SelectableText(mostPopulars[index].name),
+                              SelectableText(mostPopulars[index].uid),
+                              Center(
+                                child: TextButton.icon(
+                                  label: const Text(
+                                    "more info",
+                                    style: TextStyle(fontSize: 12.0),
+                                  ),
+                                  icon: const Icon(Icons.info, size: 12.0),
+                                  onPressed: () {
+                                    showModalBottomSheet(
+                                        context: context,
+                                        builder: (context) {
+                                          return PageSheetInfo(
+                                              page: mostPopulars[index]);
+                                        });
+                                  },
+                                ),
+                              )
+                            ],
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Text(
-                          'Choose grades',
-                          style: TextStyle(
-                            fontStyle: FontStyle.italic,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14.0,
-                          ),
-                        ),
-                      ),
-                      ...List.generate(
-                        grades.length,
-                        (index) => Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: ChoiceChip.elevated(
-                            label: Text(
-                              grades[index],
-                              style: const TextStyle(fontSize: 12.0),
-                            ),
-                            selected: selectedGrades
-                                .any((element) => element == grades[index]),
-                            onSelected: (value) {
-                              setState(() {
-                                if (value) {
-                                  selectedGrades.add(grades[index]);
-                                } else {
-                                  selectedGrades.remove(grades[index]);
-                                }
-                              });
-                            },
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Text(
-                          'Choose months',
-                          style: TextStyle(
-                            fontStyle: FontStyle.italic,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14.0,
-                          ),
-                        ),
-                      ),
-                      ...List.generate(
-                        months.length,
-                        (index) => Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: ChoiceChip.elevated(
-                            label: Text(
-                              '${months[index]}',
-                              style: const TextStyle(fontSize: 12.0),
-                            ),
-                            selected: selectedMonths
-                                .any((element) => element == months[index]),
-                            onSelected: (value) {
-                              setState(() {
-                                if (value) {
-                                  selectedMonths.add(months[index]);
-                                } else {
-                                  selectedMonths.remove(months[index]);
-                                }
-                              });
-                            },
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Center(
-                  child: TextButton(
-                      onPressed: () {
-                        recommendMostPopular();
-                      },
-                      child: const Text("Recommend")),
-                ),
-                TextButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      customHasResults = !customHasResults;
-                    });
-                  },
-                  icon: Icon(customHasResults
-                      ? Icons.arrow_drop_up
-                      : Icons.arrow_drop_down),
-                  label: const Text(
-                    "Results",
-                    style: TextStyle(
-                        fontStyle: FontStyle.italic,
-                        fontSize: 20.0,
-                        fontWeight: FontWeight.bold),
-                  ),
-                ),
-                !customHasResults
-                    ? const SizedBox()
-                    : mostPopulars.isEmpty
-                        ? const Text("No Results")
-                        : Expanded(
-                            child: SingleChildScrollView(
-                                child: Column(
-                              children: List.generate(
-                                mostPopulars.length,
-                                (index) => Padding(
-                              padding: const EdgeInsets.all(5.0),
-                              child: ListTile(
-                                title: Text(mostPopulars[index].name),
-                                subtitle: Text(mostPopulars[index].uid),
-                                onTap: () {
-                                  showModalBottomSheet(
-                                      context: context,
-                                      builder: (context) {
-                                        return PageSheetInfo(
-                                            page: mostPopulars[index]);
-                                      });
-                                },
-                              ),
-                            ),
-                              ),
-                            )),
-                          )
-              ]),
+                      )),
+            )),
       ],
     );
   }
