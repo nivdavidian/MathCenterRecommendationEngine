@@ -34,12 +34,12 @@ class PagesSimilarityAnalyzer(Analyzer):
 class UsersSimilarityAnalyzer(Analyzer):
     
     def __init__(self, **kwargs):
-        super().__init__()
+        super().__init__(kwargs)
         self.data = kwargs.get('data')
         self.step_size = kwargs.get('step_size')
     
     def analyze(self):
-        interactive_user_similarity_analysis(self.data, step=self.step_size)
+        interactive_user_similarity_analysis(self.data, self.step_size, self.c_code, self.l_code)
     def run(self):
         super().run(self.analyze)
         
