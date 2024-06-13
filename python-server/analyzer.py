@@ -34,9 +34,12 @@ class PagesSimilarityAnalyzer(Analyzer):
 class UsersSimilarityAnalyzer(Analyzer):
     
     def __init__(self, **kwargs):
-        super().__init__(kwargs)
+        super().__init__()
         self.data = kwargs.get('data')
         self.step_size = kwargs.get('step_size')
+        self.c_code = kwargs.get('c_code')
+        self.l_code = kwargs.get('l_code')
+        
     
     def analyze(self):
         interactive_user_similarity_analysis(self.data, self.step_size, self.c_code, self.l_code)
@@ -83,7 +86,8 @@ class AnalyzerFactory(AbstractFactory):
                 analyzers.extend([PagesSimilarityAnalyzer(c_code=cl_code[0], l_code=cl_code[1], n=options_copy['n']) for cl_code in options_copy['cl_codes']])
             elif name == "UserSimilarity":
                 step_size = int(options_copy.get("step_size", 5))
-                analyzers.extend([UsersSimilarityAnalyzer(data=dbAPI.get_interactive_by_clcodes(cl_code[0], cl_code[1]), step_size=step_size) for cl_code in options_copy['cl_codes']])
+                import pandas as pd
+                analyzers.extend([UsersSimilarityAnalyzer(data=pd.DataFrame(dbAPI.get_interactive_by_clcodes(cl_code[0], cl_code[1]), columns=['user_uid', 'worksheet_uid', 'l_code', 'c_code', 'time']), step_size=step_size, c_code=cl_code[0], l_code=cl_code[1]) for cl_code in options_copy['cl_codes']])
             elif name == "MostPopular":
                 analyzers.extend([MostPopular(c_code=cl_code[0], l_code=cl_code[1]) for cl_code in options_copy['cl_codes']])
             else:

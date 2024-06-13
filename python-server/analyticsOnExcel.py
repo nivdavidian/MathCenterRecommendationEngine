@@ -186,7 +186,7 @@ def interactive_user_similarity_analysis(data, step, c_code, l_code):
     os.makedirs("./user_worksheets_indexes", exist_ok=True)
     d2.to_parquet(f"./user_worksheets_indexes/{c_code}-{l_code}.parquet")
     # if l_code == "he":
-    d2.to_csv(f"./user_worksheets_indexes/{c_code}-{l_code}.csv")
+    # d2.to_csv(f"./user_worksheets_indexes/{c_code}-{l_code}.csv")
     
     df = df[df["user_uid"].isin(df2.index)]
     df = df.groupby(by="worksheet_uid").apply(lambda group: ",".join(group["user_uid"]), include_groups=False)
@@ -195,7 +195,7 @@ def interactive_user_similarity_analysis(data, step, c_code, l_code):
     
     os.makedirs("./worksheet_users_indexes", exist_ok=True)
     df.to_parquet(f"./worksheet_users_indexes/{c_code}-{l_code}.parquet")
-    df.to_csv(f"./worksheet_users_indexes/{c_code}-{l_code}.csv")
+    # df.to_csv(f"./worksheet_users_indexes/{c_code}-{l_code}.csv")
     
 def difference_in_mean(c_code, l_code):
     res = dbAPI.get_interactive_by_clcodes(c_code, l_code)

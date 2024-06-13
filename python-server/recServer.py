@@ -29,7 +29,7 @@ def after_request(response):
     logger.info(f"{request.path} took {duration}")
     return response
 
-@app.route("/getpages")
+@app.route("/api/getpages")
 def get_pages():
     try:
         term = request.args.get("term", "", type=str)
@@ -44,7 +44,7 @@ def get_pages():
         logger.error(f"get Pages:\n{e}")
         return abort(500, "Error")
 
-@app.route("/getclcodes")
+@app.route("/api/getclcodes")
 def get_cl_codes():
     try:
         codes = dbAPI.get_distinct_cl_codes()
@@ -61,7 +61,7 @@ def get_cl_codes():
     
         
     
-@app.route("/getrecommendation")
+@app.route("/api/getrecommendation")
 def get_recommendation():
     try:
         worksheet_uid = request.args.get("worksheet_uid")
@@ -74,7 +74,7 @@ def get_recommendation():
         return abort(500, "Error")
     
         
-@app.route("/recuseralike", methods=["POST"])
+@app.route("/api/recuseralike", methods=["POST"])
 def get_recommendation_user():
     try:
         already_watched = request.json["already_watched"]
@@ -89,7 +89,7 @@ def get_recommendation_user():
         logger.error(e)
         return abort(500, "Error")
     
-@app.route('/updaterecommendations', methods=['POST'])
+@app.route('/api/updaterecommendations', methods=['POST'])
 def update_recommendations():
     try:
         service.update_files_recommendations(request.json)
@@ -98,7 +98,7 @@ def update_recommendations():
         logger.error(e)
         return abort(500, "Error")
 
-@app.route('/mostpopular', methods=['POST'])
+@app.route('/api/mostpopular', methods=['POST'])
 def most_popular():
     try:
         populars = service.most_popular_in_month(**request.json)
