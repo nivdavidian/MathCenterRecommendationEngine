@@ -190,18 +190,17 @@ def get_recommend_search(term, l_code, c_code):
         AND language_code = %s 
         LIMIT 100;
         """
-        cursor.execute(sql, (term, l_code))
-        
+        cursor.execute(sql, (f"\'{term}\'", l_code))
         res = cursor.fetchall()
         if res == None or len(res) == 0:
             return []
         
         sql = "SELECT page_uid FROM worksheet_grades WHERE language_code = %s AND country_code = %s AND page_uid "
-        sql += "IN (%s)" % ", ".join(map(lambda x: f"\'{x[0]}\'", res))
-        cursor.execute(sql, (l_code, c_code,))
+        sql += "IN (%s)" % ", ".join(["%s" for _ in res])
+        tp = tuple([x[0] for x in res])
+        cursor.execute(sql, (l_code, c_code)+tp)
         uids = [x[0] for x in cursor.fetchall()]
-        
-        filtered = filter(lambda x: x[0] in uids, res)
+        filtered = list(filter(lambda x: x[0] in uids, res))
         
         return filtered
     except Exception as e:

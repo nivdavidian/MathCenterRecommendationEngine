@@ -37,7 +37,8 @@ def get_pages():
         l_code = request.args.get("lCode", "", type=str)
         print(request.args)
         results = dbAPI.get_recommend_search(term,l_code, c_code)
-            
+        if len(results) == 0:
+            return jsonify([])
         results = service.get_worksheets_info([res[0] for res in results], c_code, l_code)
         return jsonify(list(results.values()))
     except Exception as e:
