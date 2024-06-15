@@ -2,6 +2,7 @@ from factory import AbstractFactory
 from abc import ABC, abstractmethod
 from analyticsOnExcel import interactive_user_similarity_analysis, task, popular_in_month
 from wrapper import Wrapper
+from models import MarkovModel
 import dbAPI
 
 
@@ -55,6 +56,16 @@ class MostPopular(Analyzer):
         popular_in_month(self.c_code, self.l_code)
     def run(self):
         super().run(self.analyze)
+
+class MarkovAnalyzer(Analyzer):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.model = MarkovModel(kwargs.get('c_code'),kwargs.get('l_code'))
+    def analyze(self):
+        import pandas as pd
+        self.model.fit(data=pd.DataFrame(dbAPI.get_interactive_by_clcodes(self.model.c_code, self.model.l_code), columns=['user_uid', 'worksheet_uid', 'c_code', 'l_code', 'time']))
+    def run(self):
+        super().run(self.analyze)
     
 
 class AnalyzerFactory(AbstractFactory):
@@ -90,6 +101,8 @@ class AnalyzerFactory(AbstractFactory):
                 analyzers.extend([UsersSimilarityAnalyzer(data=pd.DataFrame(dbAPI.get_interactive_by_clcodes(cl_code[0], cl_code[1]), columns=['user_uid', 'worksheet_uid', 'l_code', 'c_code', 'time']), step_size=step_size, c_code=cl_code[0], l_code=cl_code[1]) for cl_code in options_copy['cl_codes']])
             elif name == "MostPopular":
                 analyzers.extend([MostPopular(c_code=cl_code[0], l_code=cl_code[1]) for cl_code in options_copy['cl_codes']])
+            elif name == "MarkovModel":
+                analyzers.extend([MarkovAnalyzer(c_code=cl_code[0], l_code=cl_code[1]) for cl_code in options_copy['cl_codes']])
             else:
                 raise Exception(f"Analyzing job named, {name} does not exist")
         

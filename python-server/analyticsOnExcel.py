@@ -239,7 +239,9 @@ def markov(df: pd.DataFrame, c_code, l_code):
     df = df.groupby(by=['worksheet_uid', 'worksheet_uid_1'], group_keys=False).count().rename(columns={'time_1':'count'}).reset_index()
     
     df = df.sort_values(by=['worksheet_uid', 'count'], ascending=[False,False]).groupby(by=['worksheet_uid'], group_keys=False)[['worksheet_uid_1']].apply(lambda g: list(g['worksheet_uid_1'])).to_frame()
-    df.to_parquet(f"markov_{c_code}_{l_code}.parquet")
+    
+    os.makedirs('MarkovModelParquets', exist_ok=True)
+    df.to_parquet(f"MarkovModelParquets/{c_code}-{l_code}.parquet")
     
 def popular_in_month(c_code, l_code):
     res = dbAPI.get_interactive_by_clcodes(c_code, l_code)

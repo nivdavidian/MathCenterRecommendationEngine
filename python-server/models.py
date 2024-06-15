@@ -47,11 +47,12 @@ class MarkovModel(MyModel):
     
     def predict(self, data, **kwargs):
         N = kwargs.get('n', 10)
-        df = pd.read_parquet(f'markov_{self.c_code}_{self.l_code}.parquet')
+        df = pd.read_parquet(f"MarkovModelParquets/{self.c_code}-{self.l_code}.parquet")
         not_in_df = list(filter(lambda x: x not in df.index, data))
         for idx in not_in_df:
             df.loc[idx, 0] = []
-        return df.loc[data].to_numpy().flatten()
+        res = df.loc[data].to_numpy().flatten()
+        return [r[:min(N,len(r))] for r in res]
     
     def fit(self, **kwargs):
         # if 'data' not in kwargs or isinstance(kwargs.get('data'), pd.DataFrame):

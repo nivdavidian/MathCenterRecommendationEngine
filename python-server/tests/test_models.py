@@ -15,6 +15,7 @@ class TestIsListOfStrings(unittest.TestCase):
         train_p = 0.8
         average = 0
         average_num = 0
+        N = 20 # recall recommendation size
         
         cl_codes = dbAPI.get_distinct_country_lang()
         for (c_code, l_code) in cl_codes:
@@ -50,10 +51,10 @@ class TestIsListOfStrings(unittest.TestCase):
             np_test_df = test_df.to_numpy().tolist()
             # print(np_test_df)
             test_X, test_Y = [x[-2] for x in np_test_df], [x[-1] for x in np_test_df]
-            predictions = model.predict(test_X)
+            predictions = model.predict(test_X, n=N)
             score = 0
             for i, p in enumerate(predictions):
-                if test_Y[i] in p[:min(20, len(p))]:
+                if test_Y[i] in p:
                     score+=1
                 
             print(f"markov ({c_code}-{l_code}) score: {score/len(test_X)}")

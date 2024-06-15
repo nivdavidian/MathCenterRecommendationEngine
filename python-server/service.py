@@ -7,6 +7,8 @@ from analyzer import AnalyzerFactory
 from wrapper import wrap
 from functools import reduce
 
+from models import MarkovModel
+
 def recommend(worksheet_uid, n=20, c_code="IL", l_code="he"):
     worksheet = Worksheet(worksheet_uid=worksheet_uid, c_code=c_code, l_code=l_code)
     worksheet.build_page()
@@ -64,4 +66,9 @@ def get_worksheets_info(uids, c_code, l_code):
         
     return m
     
-        
+def predict_markov(worksheet_uid, c_code, l_code, n):
+    model = MarkovModel(c_code, l_code)
+    preds = model.predict(worksheet_uid, n=n)
+    preds = list(preds[0])
+    infos = get_worksheets_info(preds, c_code, l_code)
+    return [infos[uid] for uid in preds]

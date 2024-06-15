@@ -107,6 +107,26 @@ def most_popular():
     except Exception as e:
         logger.error(e)
         return abort(500, "Error")
+    
+@app.route('/api/markov', methods=['POST'])
+def markov():
+    try:
+        worksheet_uid = request.json['uid']
+        c_code = request.json['cCode']
+        l_code = request.json['lCode']
+        n = 20
+        if 'n' in request.json:
+            n = request.json['n']
+    except:
+        return abort(500, 'missing argument/s in body: uid, cCode, lCode. n is optional')
+    
+    try:
+        preds = service.predict_markov(worksheet_uid, c_code, l_code, n)
+        return jsonify(preds)
+    except Exception as e:
+        logger.error(e)
+        return abort(500, 'Error')
+        
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
