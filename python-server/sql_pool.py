@@ -61,11 +61,20 @@ def release_connection(conn):
     
     with lock:
         if conn_queue.full():
+            overflow += 1
             conn.close()
         else:
             conn_queue.put_nowait(conn)
             
     return
+
+
+def replace_conn_with_new_conn(conn):
+    global lock
+    
+    conn.close()
+    return create_connection()
+        
     
 
 def close_conncections():

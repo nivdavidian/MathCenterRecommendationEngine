@@ -1,5 +1,6 @@
 import numpy as np
-from analyticsOnExcel import interactive_user_similarity_analysis
+import pandas as pd
+from analyticsOnExcel import interactive_user_similarity_analysis, markov
 
 class MyModel:    
     def __init__(self, c_code, l_code) -> None:
@@ -39,4 +40,20 @@ class CosPageSimilarityModel(MyModel):
     
     def fit(self, **kwargs):
         pass
-        
+    
+class MarkovModel(MyModel):
+    def __init__(self, c_code, l_code) -> None:
+        super().__init__(c_code, l_code)
+    
+    def predict(self, data, **kwargs):
+        N = kwargs.get('n', 10)
+        df = pd.read_parquet(f'markov_{self.c_code}_{self.l_code}.parquet')
+        not_in_df = list(filter(lambda x: x not in df.index, data))
+        for idx in not_in_df:
+            df.loc[idx, 0] = []
+        return df.loc[data].to_numpy().flatten()
+    
+    def fit(self, **kwargs):
+        # if 'data' not in kwargs or isinstance(kwargs.get('data'), pd.DataFrame):
+        #     raise Exception('\'data\' is not in kwargs or not instance of pd.DataFrame')
+        markov(kwargs.get('data'), self.c_code, self.l_code)

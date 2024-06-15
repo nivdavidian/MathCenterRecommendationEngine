@@ -14,8 +14,8 @@ def recommend(worksheet_uid, n=20, c_code="IL", l_code="he"):
     return rec
 
 def recommend_users_alike(already_watched, worksheet_uids, c_code, l_code):
-    N = 5
-    score_above = 0.8
+    N = 20
+    score_above = 1
     (user_similarity, index)  = uss.calculate_user_similarity(worksheet_uids, c_code, l_code)
     
     while True:
@@ -24,13 +24,13 @@ def recommend_users_alike(already_watched, worksheet_uids, c_code, l_code):
         users_worksheets = users_worksheets.drop_duplicates()
         users_worksheets = users_worksheets[~users_worksheets.isin(already_watched+worksheet_uids)]
         
-        if users_worksheets.size >= N or score_above <= 0.3:
+        if users_worksheets.size >= N or score_above < 0.3:
             # print(len(users_worksheets), score_above)
             # return popular or alike the last page
             if users_worksheets.size == 0:
                 users_worksheets = pd.Series(["-1"])
             break
-        score_above -= 0.15
+        score_above -= 0.05
     # print("1")
     return users_worksheets.sample(min(users_worksheets.size, N)).to_list()
 

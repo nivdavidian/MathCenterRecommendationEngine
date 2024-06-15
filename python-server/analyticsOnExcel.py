@@ -220,12 +220,9 @@ def difference_in_mean(c_code, l_code):
     df.to_csv("222.csv")
     # print(df.head(3))
     
-def markov(c_code, l_code):
-    res = dbAPI.get_interactive_by_clcodes(c_code, l_code)
-    if res == None or len(res) == 0:
-        print("something went wrong")
-    
-    df = pd.DataFrame(res, columns=["user_uid", "worksheet_uid", "l_code", "c_code", "time"]).drop_duplicates().reset_index(drop=True)
+def markov(df: pd.DataFrame, c_code, l_code):
+    # print(df.head(10))
+    df = df.drop_duplicates().reset_index(drop=True)
     
     df["time"] = pd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
     df = df.drop(["c_code", "l_code"], axis=1)
@@ -239,11 +236,10 @@ def markov(c_code, l_code):
     df = pd.concat([df, df.shift(-1).rename(columns={"user_uid": "user_uid_1", "worksheet_uid": "worksheet_uid_1", "time": "time_1"})], axis=1)
     df = df[(df["user_uid"]==df["user_uid_1"]) & (df["worksheet_uid"]!=df["worksheet_uid_1"])].reset_index(drop=True)
     df = df.drop(['user_uid_1', 'user_uid', 'time'], axis=1)
-    df = df.groupby(by=['worksheet_uid', 'worksheet_uid_1'], group_keys=False).count().rename(columns={'time_1':'count'})
-    df = df.sort_values(by=['count'], ascending=[False])
-    # print(df.shape)
-    df.to_csv("111.csv")
-    # print(df.head(3))
+    df = df.groupby(by=['worksheet_uid', 'worksheet_uid_1'], group_keys=False).count().rename(columns={'time_1':'count'}).reset_index()
+    
+    df = df.sort_values(by=['worksheet_uid', 'count'], ascending=[False,False]).groupby(by=['worksheet_uid'], group_keys=False)[['worksheet_uid_1']].apply(lambda g: list(g['worksheet_uid_1'])).to_frame()
+    df.to_parquet(f"markov_{c_code}_{l_code}.parquet")
     
 def popular_in_month(c_code, l_code):
     res = dbAPI.get_interactive_by_clcodes(c_code, l_code)
