@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:recui/HomePage.dart';
-import 'package:recui/UserSimilarityPage.dart';
+import 'package:recui/user_similarity_page.dart';
+import 'package:recui/markov_page.dart';
 import 'package:recui/most_popular_page.dart';
 
 class ChooseAlg extends StatelessWidget {
@@ -43,6 +43,21 @@ class ChooseAlg extends StatelessWidget {
                   MaterialPageRoute(builder: (context) => const MostPopularPage()));
             },
             child: const Text('Most Popular'),
+          ),
+          TextButton(
+            style: ButtonStyle(
+              shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              foregroundColor: MaterialStateProperty.all<Color>(Colors.pink),
+            ),
+            onPressed: () {
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => const MarkovPage()));
+            },
+            child: const Text('Markov Model'),
           ),
         ]),
       ),

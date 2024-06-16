@@ -1,6 +1,6 @@
 // ignore_for_file: sized_box_for_whitespace
 import 'package:flutter/material.dart';
-import 'package:recui/ChooseAlg.dart';
+import 'package:recui/choose_alg.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -15,7 +15,7 @@ class _LoginPageState extends State<LoginPage> {
   String _username = "";
   String _password = "";
 
-  String _error_message = "";
+  String _errorMessage = "";
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -74,23 +74,21 @@ class _LoginPageState extends State<LoginPage> {
               onPressed: () {
                 if (_username == "niv" && _password == "123") {
                   Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const ChooseAlg()),
-    );
-                }
-                else{
+                    context,
+                    MaterialPageRoute(builder: (context) => const ChooseAlg()),
+                  );
+                } else {
                   setState(() {
-                    _error_message = "Wrong Auth info";
+                    _errorMessage = "Wrong Auth info";
                   });
                 }
-                  
               },
             ),
           ),
-          _error_message == ""
+          _errorMessage == ""
               ? const SizedBox.shrink()
               : Text(
-                  _error_message,
+                  _errorMessage,
                   style: const TextStyle(color: Colors.red),
                 ),
           const Spacer(),

@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:recui/UserSimilarityPage.dart';
+import 'package:recui/user_similarity_page.dart';
 
 import 'dart:developer';
 

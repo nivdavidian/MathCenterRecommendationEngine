@@ -270,9 +270,7 @@ class _PageTileState extends State<PageTile> {
                 borderRadius: BorderRadius.circular(7.0),
               ),
               // tileColor: Colors.amber,
-              onTap: () {
-                print(2);
-              },
+              onTap: () {},
             ),
           ),
         ),
