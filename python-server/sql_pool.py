@@ -5,6 +5,7 @@ import time
 import os
 import queue
 from dotenv import load_dotenv
+from pymysql.err import OperationalError
 
 load_dotenv("/Users/nivdavidian/MathCenterRecommendationEngine/python-server/dbenv.env")
 
@@ -52,6 +53,7 @@ def get_connection():
         if conn is None:
             continue
         
+        conn = check_conn(conn)
         return conn          
 
 def release_connection(conn):
@@ -86,3 +88,11 @@ def close_conncections():
         while not conn_queue.empty():
             conn_queue.get_nowait().close()
     return
+
+def check_conn(conn):
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute('SELECT 1')
+    except OperationalError:
+        conn = create_connection()
+    return conn
