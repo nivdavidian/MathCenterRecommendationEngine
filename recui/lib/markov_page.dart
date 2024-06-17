@@ -95,7 +95,16 @@ class _MarkovPageState extends State<MarkovPage> {
                         (index) => ListTile(
                               title: Text(pages[index].name),
                               subtitle: Text(pages[index].uid),
-                              onTap: () {},
+                              onTap: () {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            MarkovRecommendationPage(
+                                              page: pages[index],
+                                              clCode: selectedClCode,
+                                            )));
+                              },
                               onLongPress: () {
                                 showModalBottomSheet(
                                     context: context,
@@ -143,6 +152,125 @@ class _MarkovPageState extends State<MarkovPage> {
       setState(() {
         clCodes = data.map<String>((e) => e).toList();
         clCodes.sort();
+      });
+    } else {
+      // If the server did not return a 200 OK response,
+      // then throw an exception.
+      log("${response.statusCode}");
+    }
+  }
+}
+
+class MarkovRecommendationPage extends StatefulWidget {
+  const MarkovRecommendationPage(
+      {super.key, required this.page, required this.clCode});
+  final MathCenterPage page;
+  final String clCode;
+
+  @override
+  State<MarkovRecommendationPage> createState() =>
+      _MarkovRecommendationPageState();
+}
+
+class _MarkovRecommendationPageState extends State<MarkovRecommendationPage> {
+  var isLoading = true;
+  var recommendations = List<MathCenterPage>.empty(growable: true);
+  @override
+  void initState() {
+    super.initState();
+    fetchRecommendations();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Markov Recommendations'),
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              SelectableText(
+                widget.page.name,
+                style: const TextStyle(
+                    fontSize: 20.0,
+                    fontStyle: FontStyle.italic,
+                    fontWeight: FontWeight.bold),
+              ),
+              IconButton(
+                  onPressed: () {
+                    showModalBottomSheet(
+                        context: context,
+                        builder: (context) => PageSheetInfo(page: widget.page));
+                  },
+                  icon: const Icon(Icons.info_outline))
+            ],
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'Recommendations',
+            style: TextStyle(
+                fontSize: 18.0,
+                fontStyle: FontStyle.italic,
+                fontWeight: FontWeight.bold),
+          ),
+          isLoading
+              ? const Center(
+                  child: CircularProgressIndicator(),
+                )
+              : Expanded(
+                child: SingleChildScrollView(
+                    child: Column(
+                      children: List.generate(
+                          recommendations.length,
+                          (index) => Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: ListTile(
+                                  title: Text(recommendations[index].name),
+                                  subtitle: Text(recommendations[index].uid),
+                                  onTap: () {
+                                    showModalBottomSheet(
+                                        context: context,
+                                        builder: (context) => PageSheetInfo(
+                                            page: recommendations[index]));
+                                  },
+                                ),
+                              )),
+                    ),
+                  ),
+              )
+        ],
+      ),
+    );
+  }
+
+  void fetchRecommendations() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    var splitCl = widget.clCode.split("-");
+    var cCode = splitCl[0], lCode = splitCl[1];
+
+    var url = Uri.parse('http://127.0.0.1:5000/api/markov');
+    var body = jsonEncode({
+      "uid": [widget.page.uid],
+      "cCode": cCode,
+      "lCode": lCode,
+      // "n": 10,
+    });
+    var headers = {"Content-Type": "application/json"};
+    var response = await http.post(url, body: body, headers: headers);
+    var data = List<dynamic>.empty(growable: true);
+    if (response.statusCode == 200) {
+      // If the server returns a 200 OK response, then parse the JSON.
+      data = json.decode(response.body);
+
+      setState(() {
+        isLoading = false;
+        recommendations = data.map((e) => MathCenterPage.fromJson(e)).toList();
       });
     } else {
       // If the server did not return a 200 OK response,

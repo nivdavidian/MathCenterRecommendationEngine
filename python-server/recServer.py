@@ -114,7 +114,7 @@ def markov():
         worksheet_uid = request.json['uid']
         c_code = request.json['cCode']
         l_code = request.json['lCode']
-        n = 20
+        n = 10
         if 'n' in request.json:
             n = request.json['n']
     except:

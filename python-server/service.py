@@ -70,5 +70,7 @@ def predict_markov(worksheet_uid, c_code, l_code, n):
     model = MarkovModel(c_code, l_code)
     preds = model.predict(worksheet_uid, n=n)
     preds = list(preds[0])
+    if len(preds) == 0:
+        return []
     infos = get_worksheets_info(preds, c_code, l_code)
     return [infos[uid] for uid in preds]
