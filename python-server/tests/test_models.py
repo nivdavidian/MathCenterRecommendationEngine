@@ -4,7 +4,7 @@ import dbAPI
 import unittest
 import pandas as pd
 import numpy as np
-from models import CosUserSimilarityModel, MarkovModel
+from models import CosUserSimilarityModel, MarkovModel, MostPopularModel
 from functools import reduce
 
 
@@ -12,7 +12,7 @@ from functools import reduce
 class TestIsListOfStrings(unittest.TestCase):
     
     def test_markov_model(self):
-        train_p = 0.8
+        train_p = 0.85
         average = 0
         average_num = 0
         N = 20 # recall recommendation size
@@ -21,6 +21,9 @@ class TestIsListOfStrings(unittest.TestCase):
         for (c_code, l_code) in cl_codes:
             # print(c_code, l_code)
             model = MarkovModel(c_code, l_code)
+            popular_model = MostPopularModel(c_code, l_code)
+            user_similarity_model = CosUserSimilarityModel(c_code, l_code)
+            
             df = pd.DataFrame(dbAPI.get_interactive_by_clcodes(c_code, l_code), columns=['user_uid', 'worksheet_uid', 'c_code', 'l_code', 'time'])
             # print(df)
             
@@ -47,11 +50,18 @@ class TestIsListOfStrings(unittest.TestCase):
             train_data, test_df = df[df['user_uid'].isin(train_users)].copy(), df[df['user_uid'].isin(test_users)].copy()
             
             model.fit(data=train_data)
+            user_similarity_model.fit(data=train_data, step_size=10)
+            popular_model.fit(data=train_data)
             test_df = test_df.sort_values(by=['user_uid', 'time'], ascending=[False, True]).groupby(by='user_uid', group_keys=False)[['worksheet_uid']].apply(lambda g: g['worksheet_uid'].to_list())
             np_test_df = test_df.to_numpy().tolist()
             # print(np_test_df)
             test_X, test_Y = [x[-2] for x in np_test_df], [x[-1] for x in np_test_df]
+            
+            import datetime
+            t = datetime.datetime.now()
             predictions = model.predict(test_X, n=N)
+            print(datetime.datetime.now() -t)
+            
             score = 0
             for i, p in enumerate(predictions):
                 if test_Y[i] in p:
@@ -66,12 +76,13 @@ class TestIsListOfStrings(unittest.TestCase):
     def test_user_similarity_model(self):
         # import datetime
         # t = datetime.datetime.now()
-        train_p = 0.8
+        train_p = 0.85
         cl_codes = dbAPI.get_distinct_country_lang()
         average = 0
         average_num = 0
         for (c_code, l_code) in cl_codes:
             model = CosUserSimilarityModel(c_code, l_code)
+            popular_model = MostPopularModel(c_code, l_code)
             # print(datetime.datetime.now()-t)
             data = pd.DataFrame(dbAPI.get_interactive_by_clcodes(c_code, l_code), columns=['user_uid', 'worksheet_uid', 'c_code', 'l_code', 'time'])
             # print(datetime.datetime.now()-t)
@@ -82,7 +93,7 @@ class TestIsListOfStrings(unittest.TestCase):
             
             data = data[(df2['user_uid'] == (data['user_uid'])) & (df2['worksheet_uid']!=(data['worksheet_uid']))].reset_index(drop=True)
             
-            data = data.drop(columns=['c_code', 'l_code']).drop_duplicates()
+            data = data.drop_duplicates()
             counts = data.groupby(by=['user_uid'], sort=False).count().reset_index()
             counts = counts[counts['time']>2]
             counts = counts['user_uid'].to_numpy()
@@ -97,26 +108,26 @@ class TestIsListOfStrings(unittest.TestCase):
             train_users, test_users = counts[:train_size], counts[train_size:] 
             train_data, test_data = data[data['user_uid'].isin(train_users)].copy(), data[data['user_uid'].isin(test_users)].copy()
             # print(datetime.datetime.now()-t)
-            model.fit(data=train_data, step_size=5)
+            model.fit(data=train_data, step_size=10)
+            popular_model.fit(data=train_data)
             # print(datetime.datetime.now()-t)
 
             test_data['time'] = pd.to_datetime(test_data['time'], format="%Y-%m-%d %H:%M:%S")
             test_data = test_data.sort_values(by=['user_uid', 'time'], ascending=[True, True])
-            test_data = test_data.groupby(by=['user_uid'], sort=False, group_keys=False)[['worksheet_uid']].apply(lambda g: g['worksheet_uid'].to_numpy())
-            test_data = test_data.to_numpy()
-            
-            data_max_len = max([d.size for d in test_data])
-            test_data = np.array([np.pad(array=d, pad_width=(data_max_len-len(d),0), constant_values=[0]) for d in test_data])
+            test_data = test_data.groupby(by=['user_uid'], sort=False, group_keys=False)[['worksheet_uid']].apply(lambda g: g['worksheet_uid'].to_list())
+            test_data = test_data.to_list()
             # print(test_data)
             
-            test_X, test_Y = test_data[:, :-1], test_data[:, -1:].flatten()
+            test_X, test_Y = [x[:-1] for x in test_data], [x[-1] for x in test_data]
             
-            predictions = model.predict(test_X).flatten()
+            predictions = []
+            for x in test_X:
+                predictions.append(model.predict(x))
+            
             score = 0
-            for i, list_pred in enumerate(predictions):
-                if test_Y[i] in list_pred:
-                    score += 1
-                    
+            for i, pred in enumerate(predictions):
+                if test_Y[i] in pred:
+                    score+=1
             print(f"User Similarity ({c_code}-{l_code}) score: {score/len(test_X)}")
             average_num += 1
             average += score/len(test_X)

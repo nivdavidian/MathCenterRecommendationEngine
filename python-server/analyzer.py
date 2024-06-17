@@ -2,7 +2,7 @@ from factory import AbstractFactory
 from abc import ABC, abstractmethod
 from analyticsOnExcel import interactive_user_similarity_analysis, task, popular_in_month
 from wrapper import Wrapper
-from models import MarkovModel
+from models import MarkovModel, MostPopularModel
 import dbAPI
 
 
@@ -50,10 +50,10 @@ class UsersSimilarityAnalyzer(Analyzer):
 class MostPopular(Analyzer):
     def __init__(self, **kwargs):
         super().__init__()
-        self.c_code = kwargs.get('c_code')
-        self.l_code = kwargs.get('l_code')
+        self.model = MostPopularModel(kwargs.get('c_code'), kwargs.get('l_code'))
     def analyze(self):
-        popular_in_month(self.c_code, self.l_code)
+        import pandas as pd
+        self.model.fit(data=pd.DataFrame(dbAPI.get_interactive_by_clcodes(self.model.c_code, self.model.l_code), columns=["user_uid", "worksheet_uid", "l_code", "c_code", "time"]))
     def run(self):
         super().run(self.analyze)
 
@@ -75,6 +75,7 @@ class AnalyzerFactory(AbstractFactory):
         options = {
             'cl_codes': 'all', 
             'n': 50,
+            'step_size': 10
         }
         
         if 'analyzers' not in kwargs or len(kwargs.get('analyzers')) == 0:
@@ -96,7 +97,7 @@ class AnalyzerFactory(AbstractFactory):
             if name == "PagesSimilarity":
                 analyzers.extend([PagesSimilarityAnalyzer(c_code=cl_code[0], l_code=cl_code[1], n=options_copy['n']) for cl_code in options_copy['cl_codes']])
             elif name == "UserSimilarity":
-                step_size = int(options_copy.get("step_size", 5))
+                step_size = int(options_copy.get("step_size"))
                 import pandas as pd
                 analyzers.extend([UsersSimilarityAnalyzer(data=pd.DataFrame(dbAPI.get_interactive_by_clcodes(cl_code[0], cl_code[1]), columns=['user_uid', 'worksheet_uid', 'l_code', 'c_code', 'time']), step_size=step_size, c_code=cl_code[0], l_code=cl_code[1]) for cl_code in options_copy['cl_codes']])
             elif name == "MostPopular":

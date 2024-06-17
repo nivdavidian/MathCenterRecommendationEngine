@@ -243,11 +243,9 @@ def markov(df: pd.DataFrame, c_code, l_code):
     os.makedirs('MarkovModelParquets', exist_ok=True)
     df.to_parquet(f"MarkovModelParquets/{c_code}-{l_code}.parquet")
     
-def popular_in_month(c_code, l_code):
-    res = dbAPI.get_interactive_by_clcodes(c_code, l_code)
-    if res == None or len(res) == 0:
-        print("something went wrong")
-    df = pd.DataFrame(res, columns=["user_uid", "worksheet_uid", "l_code", "c_code", "time"]).drop_duplicates().reset_index(drop=True)
+def popular_in_month(df, c_code, l_code):
+    
+    df = df.drop_duplicates().reset_index(drop=True)
     df["month"] = pd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S").apply(lambda x: x.month)
     df = df.drop(columns=["c_code", "l_code", "user_uid", "time"])
     df['count'] = 0

@@ -30,7 +30,12 @@ def recommend_users_alike(already_watched, worksheet_uids, c_code, l_code):
             # print(len(users_worksheets), score_above)
             # return popular or alike the last page
             if users_worksheets.size == 0:
-                users_worksheets = pd.Series(["-1"])
+                import datetime
+                filters = {
+                    'MonthFilter': {'months': [datetime.datetime.now().month]}
+                }
+                # print(f"ppp: {worksheet_uids}")
+                users_worksheets = pd.Series(most_popular_in_month(cCode=c_code, lCode=l_code, filters=filters))
             break
         score_above -= 0.05
     # print("1")
@@ -48,11 +53,10 @@ def most_popular_in_month(**kwargs):
         raise Exception('c_code and l_code must be send in json body')
     
     df = filter.run(pd.read_parquet(f'most_populars/{c_code}-{l_code}.parquet'))
-    df = df.groupby(by='worksheet_uid', group_keys=False).apply(lambda g: reduce(lambda acc, e: acc + e, g['count'], 0)).reset_index().sort_values(by=0, ascending=False)
+    df = df.groupby(by='worksheet_uid', group_keys=False)[['count']].apply(lambda g: reduce(lambda acc, e: acc + e, g['count'], 0)).reset_index().sort_values(by=0, ascending=False)
     df = df['worksheet_uid'].head(10)
-    res_info = get_worksheets_info(df.to_list(), c_code, l_code)
-    res_info = [res_info[uid] for uid in df]
-    return res_info
+    return df.to_list()
+    
     
 def get_worksheets_info(uids, c_code, l_code):
     infos = dbAPI.get_worksheet_info(uids, c_code, l_code)

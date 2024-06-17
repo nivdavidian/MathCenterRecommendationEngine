@@ -103,7 +103,9 @@ def update_recommendations():
 def most_popular():
     try:
         populars = service.most_popular_in_month(**request.json)
-        return jsonify(populars)
+        res_info = service.get_worksheets_info(populars, request.json['cCode'], request.json['lCode'])
+        res_info = [res_info[uid] for uid in populars]
+        return jsonify(res_info)
     except Exception as e:
         logger.error(e)
         return abort(500, "Error")
