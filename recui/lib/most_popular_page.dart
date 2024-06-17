@@ -42,7 +42,7 @@ class _MostPopularPageState extends State<MostPopularPage> {
   }
 
   void getClCodes() async {
-    var url = Uri.parse('http://127.0.0.1:5000/api/getclcodes');
+    var url = Uri.parse('https://nivres.com/api/getclcodes');
     var response = await http.get(url);
     if (response.statusCode == 200) {
       // If the server returns a 200 OK response, then parse the JSON.
@@ -354,7 +354,7 @@ class _CustomPopularSearchState extends State<CustomPopularSearch> {
   void recommendMostPopular() async {
     final List<String> cl = selectedClCode.split("-");
     var cCode = cl[0], lCode = cl[1];
-    var url = Uri.parse('http://127.0.0.1:5000/api/mostpopular');
+    var url = Uri.parse('https://nivres.com/api/mostpopular');
     var body = jsonEncode({
       "filters": {
         "AgeFilter": {"ages": selectedGrades.map((e) => gradesMap[e]).toList()},

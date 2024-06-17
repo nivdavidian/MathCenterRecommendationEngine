@@ -126,7 +126,7 @@ class _MarkovPageState extends State<MarkovPage> {
       isLoading = true;
     });
     var url = Uri.parse(
-        'http://127.0.0.1:5000/api/getpages?term=$searchString&cCode=$cCode&lCode=$lCode');
+        'https://nivres.com/api/getpages?term=$searchString&cCode=$cCode&lCode=$lCode');
     var response = await http.get(url);
     if (response.statusCode == 200) {
       // If the server returns a 200 OK response, then parse the JSON.
@@ -144,7 +144,7 @@ class _MarkovPageState extends State<MarkovPage> {
   }
 
   void getClCodes() async {
-    var url = Uri.parse('http://127.0.0.1:5000/api/getclcodes');
+    var url = Uri.parse('https://nivres.com/api/getclcodes');
     var response = await http.get(url);
     if (response.statusCode == 200) {
       // If the server returns a 200 OK response, then parse the JSON.
@@ -254,7 +254,7 @@ class _MarkovRecommendationPageState extends State<MarkovRecommendationPage> {
     var splitCl = widget.clCode.split("-");
     var cCode = splitCl[0], lCode = splitCl[1];
 
-    var url = Uri.parse('http://127.0.0.1:5000/api/markov');
+    var url = Uri.parse('https://nivres.com/api/markov');
     var body = jsonEncode({
       "uid": [widget.page.uid],
       "cCode": cCode,

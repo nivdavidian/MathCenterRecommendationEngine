@@ -31,7 +31,7 @@ class _UserSimilarityPageState extends State<UserSimilarityPage> {
   }
 
   void getClCodes() async {
-    var url = Uri.parse('http://127.0.0.1:5000/api/getclcodes');
+    var url = Uri.parse('https://nivres.com/api/getclcodes');
     var response = await http.get(url);
     if (response.statusCode == 200) {
       // If the server returns a 200 OK response, then parse the JSON.
@@ -218,7 +218,7 @@ class _UserSimilarityPageState extends State<UserSimilarityPage> {
       isLoading = true;
     });
     var url = Uri.parse(
-        'http://127.0.0.1:5000/api/getpages?term=$searchString&cCode=$cCode&lCode=$lCode');
+        'https://nivres.com/api/getpages?term=$searchString&cCode=$cCode&lCode=$lCode');
     var response = await http.get(url);
     if (response.statusCode == 200) {
       // If the server returns a 200 OK response, then parse the JSON.
@@ -437,7 +437,7 @@ class _UserSimilarityRecommendationPageState
     var splitCl = widget.clCode.split("-");
     var cCode = splitCl[0], lCode = splitCl[1];
 
-    var url = Uri.parse('http://127.0.0.1:5000/api/recuseralike');
+    var url = Uri.parse('https://nivres.com/api/recuseralike');
     var body = jsonEncode({
       "already_watched": [],
       "worksheet_uids": (widget.chosenHistory.map((e) => e.uid).toList()),
