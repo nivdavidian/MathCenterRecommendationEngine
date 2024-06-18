@@ -89,10 +89,11 @@ class MarkovModel(MyModel):
         df = pd.read_parquet(f"MarkovModelParquets/{self.c_code}-{self.l_code}.parquet")
         not_in_df = list(filter(lambda x: x not in df.index, data))
         for uid in not_in_df:
-            df.loc[uid, 0] = user_similarity_model.predict([uid], n=N)
+            df.loc[uid,0] = []
+        
         res = df.loc[data].to_numpy().flatten()
         res = [list(r) for r in res]
-        # print([len(r) for r in res])
+        
         for i, r in enumerate(res):
             if len(r)< N:
                 diff = N-len(r)
