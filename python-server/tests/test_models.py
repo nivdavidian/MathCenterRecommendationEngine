@@ -76,6 +76,7 @@ class TestIsListOfStrings(unittest.TestCase):
     def test_user_similarity_model(self):
         # import datetime
         # t = datetime.datetime.now()
+        N = 20
         train_p = 0.85
         cl_codes = dbAPI.get_distinct_country_lang()
         average = 0
@@ -108,7 +109,7 @@ class TestIsListOfStrings(unittest.TestCase):
             train_users, test_users = counts[:train_size], counts[train_size:] 
             train_data, test_data = data[data['user_uid'].isin(train_users)].copy(), data[data['user_uid'].isin(test_users)].copy()
             # print(datetime.datetime.now()-t)
-            model.fit(data=train_data, step_size=10)
+            model.fit(data=train_data, step_size=30)
             popular_model.fit(data=train_data)
             # print(datetime.datetime.now()-t)
 
@@ -122,7 +123,7 @@ class TestIsListOfStrings(unittest.TestCase):
             
             predictions = []
             for x in test_X:
-                predictions.append(model.predict(x))
+                predictions.append(model.predict(x, n=N))
             
             score = 0
             for i, pred in enumerate(predictions):
