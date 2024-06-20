@@ -15,7 +15,7 @@ class TestIsListOfStrings(unittest.TestCase):
         train_p = 0.85
         average = 0
         average_num = 0
-        N = 20 # recall recommendation size
+        N = 10 # recall recommendation size
         
         cl_codes = dbAPI.get_distinct_country_lang()
         for (c_code, l_code) in cl_codes:
@@ -76,7 +76,7 @@ class TestIsListOfStrings(unittest.TestCase):
     def test_user_similarity_model(self):
         # import datetime
         # t = datetime.datetime.now()
-        N = 20
+        N = 10
         train_p = 0.85
         cl_codes = dbAPI.get_distinct_country_lang()
         average = 0

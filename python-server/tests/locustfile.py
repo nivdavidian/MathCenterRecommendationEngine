@@ -6,4 +6,8 @@ class RecommendationUser(HttpUser):
     @task
     def get_recommendation(self):
         self.client.post("http://127.0.0.1:8000/api/markov", json={"uid": "16ca9f55", "cCode": "AR", "lCode": "es"})
-        # self.client.post("http://127.0.0.1:8000/api/mostpopular", json={"filters": {'MonthFilter':{'months':[1]}}, "cCode": "AR", "lCode": "es"})
+        
+
+    @task
+    def get_recommendation_two(self):
+        self.client.post("http://127.0.0.1:8000/api/mostpopular", json={"filters": {'MonthFilter':{'months':[1]}}, "cCode": "AR", "lCode": "es"})
