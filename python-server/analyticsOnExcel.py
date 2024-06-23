@@ -225,7 +225,7 @@ def markov(df: pd.DataFrame, c_code, l_code):
     df = df.drop_duplicates().reset_index(drop=True)
     
     df["time"] = pd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
-    df = df.drop(["c_code", "l_code"], axis=1)
+    # df = df.drop(["c_code", "l_code"], axis=1)
     df = df.sort_values(by=['user_uid', 'time'], ascending=[True, True])
     df['count'] = 0
     df2 = df.groupby(by=['user_uid'], group_keys=False)[['count']].count().reset_index()
@@ -234,7 +234,8 @@ def markov(df: pd.DataFrame, c_code, l_code):
     df = df[df['user_uid'].isin(df2['user_uid'])]
     df = df.drop(columns=['count'])
     df = pd.concat([df, df.shift(-1).rename(columns={"user_uid": "user_uid_1", "worksheet_uid": "worksheet_uid_1", "time": "time_1"})], axis=1)
-    df = df[(df["user_uid"]==df["user_uid_1"]) & (df["worksheet_uid"]!=df["worksheet_uid_1"])].reset_index(drop=True)
+    df = df[(df["user_uid"]==df["user_uid_1"]) & (df["worksheet_uid"]!=df["worksheet_uid_1"]) & (df["time_1"]-df["time"]<pd.Timedelta(days=30))].reset_index(drop=True)
+    # df.to_csv("ar.csv")
     df = df.drop(['user_uid_1', 'user_uid', 'time'], axis=1)
     df = df.groupby(by=['worksheet_uid', 'worksheet_uid_1'], group_keys=False).count().rename(columns={'time_1':'count'}).reset_index()
     
@@ -242,6 +243,7 @@ def markov(df: pd.DataFrame, c_code, l_code):
     
     os.makedirs('MarkovModelParquets', exist_ok=True)
     df.to_parquet(f"MarkovModelParquets/{c_code}-{l_code}.parquet")
+    # df.to_csv('ar-res.csv')
     
 def popular_in_month(df, c_code, l_code):
     

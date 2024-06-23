@@ -277,8 +277,8 @@ def get_interactive_by_clcodes(c_code, l_code):
         conn = sql_pool.get_connection()
         cursor = conn.cursor()
         
-        sql = "SELECT * FROM user_interactive_sets WHERE country_code = %s AND language_code = %s"
-        cursor.execute(sql, (c_code, l_code))
+        sql = "SELECT * FROM user_interactive_sets WHERE language_code = %s"
+        cursor.execute(sql, (l_code,))
         
         res = cursor.fetchall()
         return res

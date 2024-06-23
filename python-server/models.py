@@ -83,27 +83,34 @@ class MarkovModel(MyModel):
         super().__init__(c_code, l_code)
     
     def predict(self, data, **kwargs):
+        xs = [x[-1] for x in data]
+        
         user_similarity_model = CosUserSimilarityModel(self.c_code, self.l_code)
         most_popular_model = MostPopularModel(self.c_code, self.l_code)
         N = kwargs.get('n', 10)
         df = pd.read_parquet(f"MarkovModelParquets/{self.c_code}-{self.l_code}.parquet")
-        not_in_df = list(filter(lambda x: x not in df.index, data))
+        not_in_df = list(filter(lambda x: x not in df.index, xs))
         for uid in not_in_df:
             df.loc[uid,0] = []
         
-        res = df.loc[data].to_numpy().flatten()
+        res = df.loc[xs].to_numpy().flatten()
         res = [list(r) for r in res]
-        
+        # print(res)
         for i, r in enumerate(res):
             if len(r)< N:
                 diff = N-len(r)
-                res[i] = res[i] + user_similarity_model.predict([data[i]],already_watched=r, n=diff, popular=False)
+                user_similarity_recommendations = user_similarity_model.predict(data[i],already_watched=r, n=diff, popular=False)
+                res[i] = res[i] + user_similarity_recommendations
+                # print(f"sim : {user_similarity_recommendations}")
+                
                 if len(res[i])< N:
                     diff = N-len(res[i])
                     filters = {
                         'MonthFilter': {'months':[datetime.datetime.now().month]}
                     }
-                    res[i] = res[i] + most_popular_model.predict(None, already_watched=res[i], n=diff, filters=filters)
+                    mp_recommendations = most_popular_model.predict(None, already_watched=res[i], n=diff, filters=filters)
+                    res[i] = res[i] + mp_recommendations
+                    # print(mp_recommendations)
                     
                 
         # print([len(r) for r in res])

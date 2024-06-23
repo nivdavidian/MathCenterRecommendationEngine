@@ -7,7 +7,7 @@ from models import MarkovModel, MostPopularModel, CosUserSimilarityModel
 
 def recommend(worksheet_uid, n=20, c_code="IL", l_code="he"):
     worksheet = Worksheet(worksheet_uid=worksheet_uid, c_code=c_code, l_code=l_code)
-    worksheet.build_page()
+    # worksheet.build_page()
     rec = worksheet.get_rec(n)
     return rec
 
@@ -39,7 +39,7 @@ def get_worksheets_info(uids, c_code, l_code):
     
 def predict_markov(worksheet_uid, c_code, l_code, n):
     model = MarkovModel(c_code, l_code)
-    preds = model.predict(worksheet_uid, n=n)
+    preds = model.predict([[worksheet_uid]], n=n)
     preds = list(preds[0])
     if len(preds) == 0:
         return []

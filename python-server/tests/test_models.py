@@ -12,7 +12,7 @@ from functools import reduce
 class TestIsListOfStrings(unittest.TestCase):
     
     def test_markov_model(self):
-        train_p = 0.85
+        train_p = 0.8
         average = 0
         average_num = 0
         N = 10 # recall recommendation size
@@ -34,12 +34,14 @@ class TestIsListOfStrings(unittest.TestCase):
             df = df[(df2['user_uid'] == (df['user_uid'])) & (df2['worksheet_uid']!=(df['worksheet_uid']))].reset_index(drop=True)
             
             counts = df.groupby(by=['user_uid'], group_keys=False).count().reset_index()
-            counts = counts[counts['time']>2]
+            counts = counts[counts['time']>1]
             df = df[df['user_uid'].isin(counts['user_uid'])]
             del counts
             
             users = df['user_uid'].unique()
             np.random.shuffle(users)
+            print(len(users))
+            
             if len(users)<200:
                 print(f'Has {len(users)} users only this is Not Enough')
                 continue
@@ -49,13 +51,14 @@ class TestIsListOfStrings(unittest.TestCase):
             
             train_data, test_df = df[df['user_uid'].isin(train_users)].copy(), df[df['user_uid'].isin(test_users)].copy()
             
+            # train_data.to_csv('train_data.csv')
             model.fit(data=train_data)
-            user_similarity_model.fit(data=train_data, step_size=10)
+            user_similarity_model.fit(data=train_data, step_size=30)
             popular_model.fit(data=train_data)
             test_df = test_df.sort_values(by=['user_uid', 'time'], ascending=[False, True]).groupby(by='user_uid', group_keys=False)[['worksheet_uid']].apply(lambda g: g['worksheet_uid'].to_list())
             np_test_df = test_df.to_numpy().tolist()
             # print(np_test_df)
-            test_X, test_Y = [x[-2] for x in np_test_df], [x[-1] for x in np_test_df]
+            test_X, test_Y = [x[-6:-1] for x in np_test_df], [x[-1] for x in np_test_df]
             
             import datetime
             t = datetime.datetime.now()
@@ -77,7 +80,7 @@ class TestIsListOfStrings(unittest.TestCase):
         # import datetime
         # t = datetime.datetime.now()
         N = 10
-        train_p = 0.85
+        train_p = 0.8
         cl_codes = dbAPI.get_distinct_country_lang()
         average = 0
         average_num = 0
@@ -96,11 +99,12 @@ class TestIsListOfStrings(unittest.TestCase):
             
             data = data.drop_duplicates()
             counts = data.groupby(by=['user_uid'], sort=False).count().reset_index()
-            counts = counts[counts['time']>2]
+            counts = counts[counts['time']>1]
             counts = counts['user_uid'].to_numpy()
             np.random.shuffle(counts)
             # print(datetime.datetime.now()-t)
             
+            print(len(counts))
             if len(counts)<200:
                 print(f'Has {len(counts)} users only this is Not Enough')
                 continue
@@ -109,7 +113,7 @@ class TestIsListOfStrings(unittest.TestCase):
             train_users, test_users = counts[:train_size], counts[train_size:] 
             train_data, test_data = data[data['user_uid'].isin(train_users)].copy(), data[data['user_uid'].isin(test_users)].copy()
             # print(datetime.datetime.now()-t)
-            model.fit(data=train_data, step_size=30)
+            model.fit(data=train_data, step_size=100)
             popular_model.fit(data=train_data)
             # print(datetime.datetime.now()-t)
 

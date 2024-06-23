@@ -21,9 +21,9 @@ class Worksheet:
         except:
             pass
         
-        m = {x[0]: x[1] for x in dbAPI.get_pages(res, self.l_code)}
-        self.rec = [{"worksheet_uid": uid, "worksheet_name": m[uid]} for uid in res]
-        res = self.rec
+        # m = {x[0]: x[1] for x in dbAPI.get_pages(res, self.l_code)}
+        # self.rec = [{"worksheet_uid": uid, "worksheet_name": m[uid]} for uid in res]
+        # res = self.rec
         
         n = min(len(res), n)
         res = res[:n]

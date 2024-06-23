@@ -75,7 +75,7 @@ class AnalyzerFactory(AbstractFactory):
         options = {
             'cl_codes': 'all', 
             'n': 50,
-            'step_size': 10
+            'step_size': 5
         }
         
         if 'analyzers' not in kwargs or len(kwargs.get('analyzers')) == 0:
