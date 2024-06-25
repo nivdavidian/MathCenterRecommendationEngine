@@ -1,3 +1,4 @@
+from functools import reduce
 import dbAPI
 from pageclass import Worksheet
 from analyzer import AnalyzerFactory
@@ -37,11 +38,17 @@ def get_worksheets_info(uids, c_code, l_code):
         
     return m
     
-def predict_markov(worksheet_uid, c_code, l_code, n):
+def predict_markov(worksheet_uid, c_code, l_code, n, **kwargs):
     model = MarkovModel(c_code, l_code)
-    preds = model.predict([[worksheet_uid]], n=n)
-    preds = list(preds[0])
-    if len(preds) == 0:
+    preds = model.predict([worksheet_uid], n=n, grade=kwargs['grade'])
+    preds = preds[0]
+    all_uids = reduce(lambda acc, e: acc + e, preds.values(), [])
+    if len(all_uids) == 0:
         return []
-    infos = get_worksheets_info(preds, c_code, l_code)
-    return [infos[uid] for uid in preds]
+    infos = get_worksheets_info(all_uids, c_code, l_code)
+    res = []
+    for model, uids in preds.items():
+        for uid in uids:
+            infos[uid]['model'] = model
+            res.append(infos[uid])
+    return res[:min(n, len(res))]

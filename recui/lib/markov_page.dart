@@ -174,7 +174,19 @@ class MarkovRecommendationPage extends StatefulWidget {
 
 class _MarkovRecommendationPageState extends State<MarkovRecommendationPage> {
   var isLoading = true;
-  var recommendations = List<MathCenterPage>.empty(growable: true);
+  var recommendations = List<RecMathCenterPage>.empty(growable: true);
+  final gradesMap = {
+    'pre-k': 'prek',
+    'kindergarten': 'kindergarten',
+    '1st': 'first',
+    '2nd': 'second',
+    '3rd': 'third',
+    '4th': 'fourth',
+    '5th': 'fifth',
+    '6th': 'sixth',
+    '7th': 'seventh',
+    '8th': 'eighth'
+  };
   @override
   void initState() {
     super.initState();
@@ -221,7 +233,7 @@ class _MarkovRecommendationPageState extends State<MarkovRecommendationPage> {
                   child: CircularProgressIndicator(),
                 )
               : Expanded(
-                child: SingleChildScrollView(
+                  child: SingleChildScrollView(
                     child: Column(
                       children: List.generate(
                           recommendations.length,
@@ -230,17 +242,20 @@ class _MarkovRecommendationPageState extends State<MarkovRecommendationPage> {
                                 child: ListTile(
                                   title: Text(recommendations[index].name),
                                   subtitle: Text(recommendations[index].uid),
+                                  trailing: Text(recommendations[index].model),
                                   onTap: () {
                                     showModalBottomSheet(
                                         context: context,
                                         builder: (context) => PageSheetInfo(
-                                            page: recommendations[index]));
+                                            page: MathCenterPage
+                                                .fromRecMathCenterPage(
+                                                    recommendations[index])));
                                   },
                                 ),
                               )),
                     ),
                   ),
-              )
+                )
         ],
       ),
     );
@@ -259,6 +274,10 @@ class _MarkovRecommendationPageState extends State<MarkovRecommendationPage> {
       "uid": [widget.page.uid],
       "cCode": cCode,
       "lCode": lCode,
+      "grade": [
+        gradesMap[widget.page.minGrade],
+        gradesMap[widget.page.maxGrade]
+      ],
       // "n": 10,
     });
     var headers = {"Content-Type": "application/json"};
@@ -270,7 +289,8 @@ class _MarkovRecommendationPageState extends State<MarkovRecommendationPage> {
 
       setState(() {
         isLoading = false;
-        recommendations = data.map((e) => MathCenterPage.fromJson(e)).toList();
+        recommendations =
+            data.map((e) => RecMathCenterPage.fromJson(e)).toList();
       });
     } else {
       // If the server did not return a 200 OK response,

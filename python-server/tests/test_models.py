@@ -65,6 +65,7 @@ class TestIsListOfStrings(unittest.TestCase):
             predictions = model.predict(test_X, n=N)
             print(datetime.datetime.now() -t)
             
+            predictions = list(map(lambda x: x['markov'] + x['userSimilarity'] + x['mostPopular'], predictions))
             score = 0
             for i, p in enumerate(predictions):
                 if test_Y[i] in p:

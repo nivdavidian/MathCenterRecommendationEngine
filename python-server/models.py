@@ -94,27 +94,31 @@ class MarkovModel(MyModel):
             df.loc[uid,0] = []
         
         res = df.loc[xs].to_numpy().flatten()
-        res = [list(r) for r in res]
+        res = [{'markov': list(r), 'userSimilarity': [], 'mostPopular': []} for r in res]
         # print(res)
         for i, r in enumerate(res):
+            r = r['markov']
             if len(r)< N:
                 diff = N-len(r)
                 user_similarity_recommendations = user_similarity_model.predict(data[i],already_watched=r, n=diff, popular=False)
-                res[i] = res[i] + user_similarity_recommendations
+                
+                res[i]['userSimilarity'] = user_similarity_recommendations
                 # print(f"sim : {user_similarity_recommendations}")
                 
-                if len(res[i])< N:
-                    diff = N-len(res[i])
+                if len(res[i]['userSimilarity'])< N:
+                    diff = N-len(res[i]['userSimilarity'])
                     filters = {
                         'MonthFilter': {'months':[datetime.datetime.now().month]}
                     }
+                    if kwargs.get('grade'):
+                        filters['AgeFilter'] = {'ages': kwargs.get('grade')}
                     mp_recommendations = most_popular_model.predict(None, already_watched=res[i], n=diff, filters=filters)
-                    res[i] = res[i] + mp_recommendations
+                    res[i]['mostPopular'] = mp_recommendations
                     # print(mp_recommendations)
                     
                 
         # print([len(r) for r in res])
-        return [r[:min(N,len(r))] for r in res]
+        return res
     
     def fit(self, **kwargs):
         # if 'data' not in kwargs or isinstance(kwargs.get('data'), pd.DataFrame):

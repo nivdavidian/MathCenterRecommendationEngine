@@ -123,7 +123,7 @@ def markov():
         return abort(500, 'missing argument/s in body: uid, cCode, lCode. n is optional')
     
     try:
-        preds = service.predict_markov(worksheet_uid, c_code, l_code, n)
+        preds = service.predict_markov(worksheet_uid, c_code, l_code, n, **(request.json))
         return jsonify(preds)
     except Exception as e:
         logger.error(e)

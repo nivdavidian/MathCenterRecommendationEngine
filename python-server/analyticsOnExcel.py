@@ -96,31 +96,20 @@ def analyze_downloads():
 def calculate_cos_sim_by_country(c_code, l_code):
     
     df2 = pd.DataFrame(dbAPI.get_worksheet_grades_by_country_lang(c_code, l_code), columns=["worksheet_uid", "min_grade", "max_grade"])
-    df2["min_grade"] = df2["min_grade"].apply(EnumManipulation.convert_to_enum_value)
-    df2["max_grade"] = df2["max_grade"].apply(EnumManipulation.convert_to_enum_value)
-    
-    uniq_pages = df2["worksheet_uid"].unique()
     
     df = pd.DataFrame(dbAPI.get_all_pages_topics(), columns=["worksheet_uid", "topic"])
+    df = pd.get_dummies(df, columns=['topic'], prefix="", prefix_sep="").groupby(by='worksheet_uid').any()
+    df = pd.merge(df2, df, on='worksheet_uid', how='left')
+    df['grades'] = df.apply(lambda x: EnumManipulation.enum_names_by_value(list(range(EnumManipulation.convert_to_enum_value(x['min_grade']), EnumManipulation.convert_to_enum_value(x['max_grade'])+1))), axis=1)
+    df = df.drop(columns=['min_grade', 'max_grade']).explode('grades')
     
-    # df = pd.merge(df2, df, on=["worksheet_uid"], how='left')
+    df = pd.get_dummies(df, columns=['grades'], prefix="", prefix_sep="").groupby(level=0).max()
+    df = df.set_index('worksheet_uid')
+    # pd.get_dummies(pd.merge(df2, df, on=["worksheet_uid"], how='left').set_index('worksheet_uid', inplace=False).head(1000)).to_csv('111.csv')
     #TODO interogate if its better with not merge
 
-    uniq_topics = df["topic"].unique()
     
-    zeroes_df = pd.DataFrame(0, index=uniq_pages, columns=np.concatenate((uniq_topics, np.array(range(12)))))
-
-    for _, row in df.iterrows():
-        if row["worksheet_uid"] in zeroes_df.index:
-            zeroes_df.loc[row["worksheet_uid"], row["topic"]] = 1
-    del df
-        
-    for _, row in df2.iterrows():
-        for val in range(row["min_grade"], row["max_grade"]+1):
-            zeroes_df.loc[row["worksheet_uid"], val] = 1
-    del df2
-    
-    cos_sim = cosine_similarity(zeroes_df.values)
+    cos_sim = cosine_similarity(df.values)
     
     # print("0ba2893f\n", zeroes_df.loc["0ba2893f", zeroes_df.loc["0ba2893f"] != 0])
     
@@ -128,8 +117,7 @@ def calculate_cos_sim_by_country(c_code, l_code):
     
     # print("00d74576\n", zeroes_df.loc["00d74576", zeroes_df.loc["00d74576"] != 0])
 
-    cos_sim_df = pd.DataFrame(cos_sim, index=zeroes_df.index, columns=zeroes_df.index)
-    del zeroes_df
+    cos_sim_df = pd.DataFrame(cos_sim, index=df.index, columns=df.index)
     # print("0ba2893f", cos_sim_df.loc["0a810afe","0ba2893f"])
     # print("00d74576", cos_sim_df.loc["0a810afe","00d74576"])
     
@@ -279,3 +267,4 @@ def task(c_code, l_code, n):
     
 # markov("IL", "he")
 # difference_in_mean("IL", "he")
+# task("IL", "he", 100)
