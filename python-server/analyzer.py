@@ -2,8 +2,9 @@ from factory import AbstractFactory
 from abc import ABC, abstractmethod
 from analyticsOnExcel import interactive_user_similarity_analysis, task, popular_in_month
 from wrapper import Wrapper
-from models import MarkovModel, MostPopularModel
+from models import MarkovModel, MostPopularModel, CosUserSimilarityModel
 import dbAPI
+import pandas as pd
 
 
 
@@ -27,6 +28,8 @@ class PagesSimilarityAnalyzer(Analyzer):
     
     def analyze(self):
         task(self.c_code, self.l_code, self.n)
+        from recServer import logger
+        logger.info(f'Finished update recommendatiom of Page Similarity in {self.c_code}-{self.l_code}')
     
     def run(self):
         super().run(self.analyze)
@@ -36,14 +39,15 @@ class UsersSimilarityAnalyzer(Analyzer):
     
     def __init__(self, **kwargs):
         super().__init__()
-        self.data = kwargs.get('data')
-        self.step_size = kwargs.get('step_size')
-        self.c_code = kwargs.get('c_code')
-        self.l_code = kwargs.get('l_code')
+        self.model = CosUserSimilarityModel(kwargs.get('c_code'), kwargs.get('l_code'))
+        self.step_size = kwargs.get('step_size', 5)
         
     
     def analyze(self):
-        interactive_user_similarity_analysis(self.data, self.step_size, self.c_code, self.l_code)
+        data = pd.DataFrame(dbAPI.get_interactive_by_clcodes(self.model.c_code,self.model.l_code), columns=['user_uid', 'worksheet_uid', 'l_code', 'c_code', 'time'])
+        self.model.fit(data=data, step_size=self.step_size)
+        from recServer import logger
+        logger.info(f'Finished update recommendatiom of User Similarity in {self.model.c_code}-{self.model.l_code}')
     def run(self):
         super().run(self.analyze)
         
@@ -52,8 +56,9 @@ class MostPopular(Analyzer):
         super().__init__()
         self.model = MostPopularModel(kwargs.get('c_code'), kwargs.get('l_code'))
     def analyze(self):
-        import pandas as pd
         self.model.fit(data=pd.DataFrame(dbAPI.get_interactive_by_clcodes(self.model.c_code, self.model.l_code), columns=["user_uid", "worksheet_uid", "l_code", "c_code", "time"]))
+        from recServer import logger
+        logger.info(f'Finished update recommendatiom of Most Popular in {self.model.c_code}-{self.model.l_code}')
     def run(self):
         super().run(self.analyze)
 
@@ -62,8 +67,9 @@ class MarkovAnalyzer(Analyzer):
         super().__init__()
         self.model = MarkovModel(kwargs.get('c_code'),kwargs.get('l_code'))
     def analyze(self):
-        import pandas as pd
         self.model.fit(data=pd.DataFrame(dbAPI.get_interactive_by_clcodes(self.model.c_code, self.model.l_code), columns=['user_uid', 'worksheet_uid', 'c_code', 'l_code', 'time']))
+        from recServer import logger
+        logger.info(f'Finished update recommendatiom of Markov Model in {self.model.c_code}-{self.model.l_code}')
     def run(self):
         super().run(self.analyze)
     
@@ -98,8 +104,7 @@ class AnalyzerFactory(AbstractFactory):
                 analyzers.extend([PagesSimilarityAnalyzer(c_code=cl_code[0], l_code=cl_code[1], n=options_copy['n']) for cl_code in options_copy['cl_codes']])
             elif name == "UserSimilarity":
                 step_size = int(options_copy.get("step_size"))
-                import pandas as pd
-                analyzers.extend([UsersSimilarityAnalyzer(data=pd.DataFrame(dbAPI.get_interactive_by_clcodes(cl_code[0], cl_code[1]), columns=['user_uid', 'worksheet_uid', 'l_code', 'c_code', 'time']), step_size=step_size, c_code=cl_code[0], l_code=cl_code[1]) for cl_code in options_copy['cl_codes']])
+                analyzers.extend([UsersSimilarityAnalyzer(step_size=step_size, c_code=cl_code[0], l_code=cl_code[1]) for cl_code in options_copy['cl_codes']])
             elif name == "MostPopular":
                 analyzers.extend([MostPopular(c_code=cl_code[0], l_code=cl_code[1]) for cl_code in options_copy['cl_codes']])
             elif name == "MarkovModel":

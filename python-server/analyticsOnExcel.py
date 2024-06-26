@@ -264,7 +264,7 @@ def task(c_code, l_code, n):
     
     top_n_df.to_parquet(f"{path}/{l_code}-{c_code}.parquet", index=False)
     # cos_df.to_parquet(f'cos_sim_files/{l_code}-{c_code}.parquet', index=False)
-    print(f"finished {l_code}-{c_code}")
+    # print(f"finished {l_code}-{c_code}")
     
 # markov("IL", "he")
 # difference_in_mean("IL", "he")

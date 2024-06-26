@@ -249,6 +249,25 @@ def get_recommend_search(term, l_code, c_code):
         cursor.close()
         sql_pool.release_connection(conn)
         
+def get_distinct_l_codes():
+    try:
+        conn = sql_pool.get_connection()
+        cursor = conn.cursor()
+        
+        sql = "SELECT DISTINCT language_code FROM worksheet_grades"
+        cursor.execute(sql)
+        
+        res = cursor.fetchall()
+        if res == None:
+            res = []
+        
+        return res
+    except Exception as e:
+        raise e
+    finally:
+        cursor.close()
+        sql_pool.release_connection(conn)
+        
 def get_distinct_cl_codes():
     try:
         conn = sql_pool.get_connection()
