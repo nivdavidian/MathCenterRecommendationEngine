@@ -147,7 +147,8 @@ def interactive_user_similarity_analysis(data, step, c_code, l_code):
     df_o = data.copy()
     
     df_o["time"] = pd.to_datetime(df_o["time"], format="%Y-%m-%d %H:%M:%S")
-    df_o = df_o.sort_values(by=['user_uid', 'time'], ascending=[False, False])
+    df_o = df_o.sort_values(by=['user_uid', 'time'], ascending=[False, True])
+    # print(df_o.head(10))
     # if l_code == 'he':
     #     df_o.to_csv('ddd.csv')
     
@@ -161,7 +162,7 @@ def interactive_user_similarity_analysis(data, step, c_code, l_code):
     d2.columns = ['user_uid', "worksheets"]
     d2 = d2[d2['user_uid'].isin(df2.index)].reset_index(drop=True)
     n = step*2
-    d2['worksheets'] = d2['worksheets'].apply(lambda g: [g[i*step:min(len(g),i*step+n)] for i in range(int(len(g)/step) if len(g)>=step else 1)] + [g])
+    d2['worksheets'] = d2['worksheets'].apply(lambda g: [g[i*step:min(len(g),i*step+n)] for i in range(int(len(g)/step) if len(g)>n else 0)] + [g])
     d2 = d2.explode('worksheets').reset_index(drop=True)
     def get_index(size):
         for i in range(size):
@@ -268,3 +269,4 @@ def task(c_code, l_code, n):
 # markov("IL", "he")
 # difference_in_mean("IL", "he")
 # task("IL", "he", 100)
+# interactive_user_similarity_analysis(pd.DataFrame(dbAPI.get_interactive_by_clcodes("", "he"), columns=['user_uid', 'worksheet_uid', 'c_code', 'l_code', 'time']), 5, "IL", "he")

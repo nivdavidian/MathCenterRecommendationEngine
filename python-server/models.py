@@ -60,13 +60,13 @@ class CosUserSimilarityModel(MyModel):
             users_worksheets = users_worksheets.drop_duplicates()
             users_worksheets = users_worksheets[~users_worksheets.isin(already_watched+worksheet_uids)]
             
-            if users_worksheets.size >= N or score_above < 0.3:
+            if users_worksheets.size >= N or score_above < 0.5:
                 if users_worksheets.size == 0:
                     return []
                 break
             score_above -= 0.1
         # print("1")
-        return users_worksheets.sample(min(users_worksheets.size, N)).to_list()
+        return users_worksheets.to_list()[:min(users_worksheets.size, N)]
         
 class CosPageSimilarityModel(MyModel):
     def __init__(self, c_code, l_code) -> None:

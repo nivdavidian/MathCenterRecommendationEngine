@@ -40,7 +40,7 @@ def get_worksheets_info(uids, c_code, l_code):
     
 def predict_markov(worksheet_uid, c_code, l_code, n, **kwargs):
     model = MarkovModel(c_code, l_code)
-    preds = model.predict([worksheet_uid], n=n, grade=kwargs['grade'])
+    preds = model.predict([worksheet_uid], n=n, grade=kwargs.get('grade'))
     preds = preds[0]
     all_uids = reduce(lambda acc, e: acc + e, preds.values(), [])
     if len(all_uids) == 0:

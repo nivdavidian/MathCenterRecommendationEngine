@@ -53,7 +53,7 @@ class TestIsListOfStrings(unittest.TestCase):
             
             # train_data.to_csv('train_data.csv')
             model.fit(data=train_data)
-            user_similarity_model.fit(data=train_data, step_size=30)
+            user_similarity_model.fit(data=train_data, step_size=3)
             popular_model.fit(data=train_data)
             test_df = test_df.sort_values(by=['user_uid', 'time'], ascending=[False, True]).groupby(by='user_uid', group_keys=False)[['worksheet_uid']].apply(lambda g: g['worksheet_uid'].to_list())
             np_test_df = test_df.to_numpy().tolist()
@@ -68,7 +68,7 @@ class TestIsListOfStrings(unittest.TestCase):
             predictions = list(map(lambda x: x['markov'] + x['userSimilarity'] + x['mostPopular'], predictions))
             score = 0
             for i, p in enumerate(predictions):
-                if test_Y[i] in p:
+                if test_Y[i] in p[:min(len(p), N)]:
                     score+=1
                 
             print(f"markov ({c_code}-{l_code}) score: {score/len(test_X)}")
@@ -114,7 +114,7 @@ class TestIsListOfStrings(unittest.TestCase):
             train_users, test_users = counts[:train_size], counts[train_size:] 
             train_data, test_data = data[data['user_uid'].isin(train_users)].copy(), data[data['user_uid'].isin(test_users)].copy()
             # print(datetime.datetime.now()-t)
-            model.fit(data=train_data, step_size=100)
+            model.fit(data=train_data, step_size=3)
             popular_model.fit(data=train_data)
             # print(datetime.datetime.now()-t)
 

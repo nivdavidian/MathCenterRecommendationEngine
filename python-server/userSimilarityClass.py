@@ -26,7 +26,9 @@ def calculate_user_similarity(worksheet_uids, c_code, l_code):
 def top_n_sim_users(sim_one_row: pd.DataFrame, score_above=0.8):
     sim_one_row = sim_one_row.iloc[0][sim_one_row.iloc[0]>=score_above]
     # print(sim_one_row)
-    sim_one_row.sort_values()
+    sim_one_row = sim_one_row.sort_values(ascending=False)
+    # sim_one_row.to_csv('sim_one_row.csv')
+    # print(score_above)
     return sim_one_row.index
 
 def get_user_worksheets(users, c_code, l_code, **kwargs):
@@ -42,7 +44,7 @@ def get_user_worksheets(users, c_code, l_code, **kwargs):
     worksheets = worksheets_index.loc[users]
     worksheets = worksheets.explode('worksheets').reset_index(drop=False)
     worksheets = pd.Series(data=worksheets['worksheets'].values, index=worksheets['user_uid'].values)
-    # print(worksheets.head(5))
+    # print(worksheets.head(30))
     worksheets.index.name = 'user_uid'
     
     return worksheets, worksheets_index
