@@ -270,7 +270,9 @@ class _PageTileState extends State<PageTile> {
                 borderRadius: BorderRadius.circular(7.0),
               ),
               // tileColor: Colors.amber,
-              onTap: () {},
+              onLongPress: () {
+                showModalBottomSheet(context: context, builder: (context)=>PageSheetInfo(page: widget.page));
+              },
             ),
           ),
         ),
@@ -475,6 +477,7 @@ class PageSheetInfo extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
+      child: SingleChildScrollView(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -505,6 +508,7 @@ class PageSheetInfo extends StatelessWidget {
               style: const TextStyle(fontSize: 16),
             ),
         ],
+        ),
       ),
     );
   }

@@ -4,7 +4,7 @@ import dbAPI
 import unittest
 import pandas as pd
 import numpy as np
-from models import CosUserSimilarityModel, MarkovModel, MostPopularModel
+from models import CosUserSimilarityModel, MarkovModel, MostPopularModel, MixedModel
 from functools import reduce
 
 
@@ -12,7 +12,7 @@ from functools import reduce
 class TestIsListOfStrings(unittest.TestCase):
     
     def test_markov_model(self):
-        train_p = 0.8
+        train_p = 0.85
         average = 0
         average_num = 0
         N = 10 # recall recommendation size
@@ -20,7 +20,8 @@ class TestIsListOfStrings(unittest.TestCase):
         cl_codes = dbAPI.get_distinct_country_lang()
         for (c_code, l_code) in cl_codes:
             # print(c_code, l_code)
-            model = MarkovModel(c_code, l_code)
+            mixed_model = MixedModel(c_code, l_code, N)
+            model = MarkovModel(c_code, l_code, N)
             popular_model = MostPopularModel(c_code, l_code)
             user_similarity_model = CosUserSimilarityModel(c_code, l_code)
             
@@ -60,12 +61,10 @@ class TestIsListOfStrings(unittest.TestCase):
             # print(np_test_df)
             test_X, test_Y = [x[-6:-1] for x in np_test_df], [x[-1] for x in np_test_df]
             
-            import datetime
-            t = datetime.datetime.now()
-            predictions = model.predict(test_X, n=N)
-            print(datetime.datetime.now() -t)
-            
-            predictions = list(map(lambda x: x['markov'] + x['userSimilarity'] + x['mostPopular'], predictions))
+            import time
+            t = time.time()
+            predictions = [list(mixed_model.predict(x).index) for x in test_X]
+            print(time.time() - t)
             score = 0
             for i, p in enumerate(predictions):
                 if test_Y[i] in p[:min(len(p), N)]:

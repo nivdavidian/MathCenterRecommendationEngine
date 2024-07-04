@@ -3,18 +3,23 @@ import dbAPI
 from pageclass import Worksheet
 from analyzer import AnalyzerFactory
 from wrapper import wrap
+import numpy as np
 
-from models import MarkovModel, MostPopularModel, CosUserSimilarityModel
+from models import MarkovModel, MostPopularModel, CosUserSimilarityModel, MixedModel, CosPageSimilarityModel
 
-def recommend(worksheet_uid, n=20, c_code="IL", l_code="he"):
-    worksheet = Worksheet(worksheet_uid=worksheet_uid, c_code=c_code, l_code=l_code)
-    # worksheet.build_page()
-    rec = worksheet.get_rec(n)
-    return rec
+def recommend(uids, n=20, c_code="IL", l_code="he"):
+    model = CosPageSimilarityModel(c_code, l_code)
+    preds = model.predict(uids)
+    preds = preds[(np.argsort(preds, preds[:, 1])[::-1])]
+    infos = get_worksheets_info(preds[:, 0], c_code, l_code)
+    return [infos[uid] for uid in preds[:, 0]]
 
 def recommend_users_alike(already_watched, worksheet_uids, c_code, l_code, **kwargs):
     model = CosUserSimilarityModel(c_code, l_code)
-    return model.predict(worksheet_uids, already_watched=already_watched, n=kwargs.get('n',20))
+    preds = model.predict(worksheet_uids, already_watched=already_watched, n=kwargs.get('n',20))
+    preds = preds[(np.argsort(preds, preds[:, 1])[::-1])]
+    infos = get_worksheets_info(preds[:, 0], kwargs.get('cCode'), kwargs.get('lCode'))
+    return [infos[uid] for uid in preds[:, 0]]
 
 def update_files_recommendations(json):
     analyzers = AnalyzerFactory.create_instance(**json)
@@ -23,7 +28,10 @@ def update_files_recommendations(json):
     
 def most_popular_in_month(**kwargs):
     model = MostPopularModel(kwargs.get('cCode'), kwargs.get('lCode'))
-    return model.predict(None, **kwargs)
+    preds = model.predict(None, **kwargs)
+    preds = preds[(np.argsort(preds, preds[:, 1])[::-1])]
+    infos = get_worksheets_info(preds[:, 0], kwargs.get('cCode'), kwargs.get('lCode'))
+    return [infos[uid] for uid in preds[:, 0]]
     
     
 def get_worksheets_info(uids, c_code, l_code):
@@ -39,16 +47,22 @@ def get_worksheets_info(uids, c_code, l_code):
     return m
     
 def predict_markov(worksheet_uid, c_code, l_code, n, **kwargs):
-    model = MarkovModel(c_code, l_code)
-    preds = model.predict([worksheet_uid], n=n, grade=kwargs.get('grade'))
-    preds = preds[0]
-    all_uids = reduce(lambda acc, e: acc + e, preds.values(), [])
-    if len(all_uids) == 0:
+    model = MarkovModel(c_code, l_code, n)
+    
+    preds = model.predict(worksheet_uid, n=n, grade=kwargs.get('grade'))
+    preds = preds[(np.argsort(preds, preds[:, 1])[::-1])]
+    infos = get_worksheets_info(preds[:, 0], kwargs.get('cCode'), kwargs.get('lCode'))
+    return [infos[uid] for uid in preds[:, 0]]
+
+
+def predict_mixed(uids, c_code, l_code, n, score_above, **kwargs):
+    model = MixedModel(c_code, l_code, n)
+    
+    preds_df = model.predict(uids, n=n, grade=kwargs.get('grade'), score_above=score_above)
+    if preds_df.empty:
         return []
+    
+    all_uids = list(preds_df.index)
     infos = get_worksheets_info(all_uids, c_code, l_code)
-    res = []
-    for model, uids in preds.items():
-        for uid in uids:
-            infos[uid]['model'] = model
-            res.append(infos[uid])
-    return res[:min(n, len(res))]
+    
+    return sorted(list(map(lambda x:  {**(infos[x[0]]), **(x[1])},preds_df.T.to_dict().items())), key=lambda x: x['score'], reverse=True)

@@ -107,6 +107,7 @@ def calculate_cos_sim_by_country(c_code, l_code):
     df = df.set_index('worksheet_uid')
     # pd.get_dummies(pd.merge(df2, df, on=["worksheet_uid"], how='left').set_index('worksheet_uid', inplace=False).head(1000)).to_csv('111.csv')
     #TODO interogate if its better with not merge
+    # df.to_csv(f"top_by_country_files/{l_code}-{c_code}.csv", index=True)
 
     
     cos_sim = cosine_similarity(df.values)
@@ -124,67 +125,33 @@ def calculate_cos_sim_by_country(c_code, l_code):
     return cos_sim_df
 
 def top_n_cos_sim(df: pd.DataFrame, n):
+    df = df.apply(lambda row: json.dumps(list(row.loc[(row.index!=row.name) & (row>=0.4)].sort_values(ascending=False,).items())), axis=1)
+    df.name = 'top_10'
+    df = df.to_frame()
+    return df
 
-    top_10_df = pd.DataFrame({"worksheet_uid": df.index},index=df.index)
-    top_10_df["top_10"] = ''
+def interactive_user_similarity_analysis(data: pd.DataFrame, step, c_code, l_code):
+    data = data.drop_duplicates().reset_index(drop=True)
+    data["time"] = pd.to_datetime(data["time"], format="%Y-%m-%d %H:%M:%S")
     
-    # print(df.loc["0a810afe","00d74576"])
-    # print(df.loc["0a810afe","0ba2893f"])
-
-    for index, row in df.iterrows():
-        sorted = row.sort_values(ascending=False)
-        # if index == "0a810afe":
-        #     sorted.to_csv("/Users/nivdavidian/Downloads/sorted.csv")
-        #     print(sorted.head(n).index.to_list())
-        top_10_df.loc[index, "top_10"] = ','.join(sorted.head(n).index.to_list())
-
-    return top_10_df
-
-def interactive_user_similarity_analysis(data, step, c_code, l_code):
-    if data.empty or data is None:
-        print("something went wrong")
+    data = data.sort_values(by=['user_uid', 'time'], ascending=[False, True])
     
-    df_o = data.copy()
+    data['date'] = data["time"].dt.strftime('%Y-%m-%d %H')
+    data = data.drop_duplicates(subset=['user_uid', 'worksheet_uid', 'date'], keep='first')[['user_uid', 'worksheet_uid', 'time']]
     
-    df_o["time"] = pd.to_datetime(df_o["time"], format="%Y-%m-%d %H:%M:%S")
-    df_o = df_o.sort_values(by=['user_uid', 'time'], ascending=[False, True])
-    # print(df_o.head(10))
-    # if l_code == 'he':
-    #     df_o.to_csv('ddd.csv')
+    df2 = data.groupby(by='user_uid', sort=False, group_keys=False).count()
+    df2 = df2[df2['worksheet_uid']>1]
+    data = data[data['user_uid'].isin(df2.index)].reset_index(drop=True)
     
-    df = df_o.drop(columns=["time"])
+    n=step*2
+    data = data.groupby(by='user_uid')[['worksheet_uid']].apply(lambda g: ([list(g['worksheet_uid'])] + [g['worksheet_uid'].to_list()[i*step:min(len(g['worksheet_uid'].to_list()),i*step+n)] for i in range(int(len(g["worksheet_uid"].to_list())/step) if len(g["worksheet_uid"].to_list())>n else 0)]))
+    data = data.explode().reset_index()
+    data['user_uid'] = [f"{i}_" for i in data.index] + data['user_uid']
+    data = data.explode(0)
     
-    groupby = df.groupby(by="user_uid")
-    df2 = groupby.nunique().rename(columns={"worksheet_uid": "count"})
-    df2 = df2[df2["count"]>1]
-    
-    d2 = groupby.apply(lambda group: [i for i in group["worksheet_uid"]], include_groups=False).to_frame().reset_index()
-    d2.columns = ['user_uid', "worksheets"]
-    d2 = d2[d2['user_uid'].isin(df2.index)].reset_index(drop=True)
-    n = step*2
-    d2['worksheets'] = d2['worksheets'].apply(lambda g: [g[i*step:min(len(g),i*step+n)] for i in range(int(len(g)/step) if len(g)>n else 0)] + [g])
-    d2 = d2.explode('worksheets').reset_index(drop=True)
-    def get_index(size):
-        for i in range(size):
-            yield i
-    
-    gen = get_index(d2.size)
-    d2["original_uid"] = d2["user_uid"]
-    d2['user_uid'] = d2['user_uid'].apply(lambda uid: f"{next(gen)}_{uid}")
-    
-    os.makedirs("./user_worksheets_indexes", exist_ok=True)
-    d2.to_parquet(f"./user_worksheets_indexes/{c_code}-{l_code}.parquet")
-    # if l_code == "he":
-    # d2.to_csv(f"./user_worksheets_indexes/{c_code}-{l_code}.csv")
-    
-    df = df[df["user_uid"].isin(df2.index)]
-    df = df.groupby(by="worksheet_uid").apply(lambda group: ",".join(group["user_uid"]), include_groups=False)
-    df.name = "users"
-    df = pd.DataFrame(df)
-    
-    os.makedirs("./worksheet_users_indexes", exist_ok=True)
-    df.to_parquet(f"./worksheet_users_indexes/{c_code}-{l_code}.parquet")
-    # df.to_csv(f"./worksheet_users_indexes/{c_code}-{l_code}.csv")
+    os.makedirs("./UserSimilarityParquets", exist_ok=True)
+    data.to_parquet(f'UserSimilarityParquets/{l_code}.parquet', index=False)
+    # data.to_csv(f'UserSimilarityParquets/{c_code}-{l_code}.csv', index=False)
     
 def difference_in_mean(c_code, l_code):
     res = dbAPI.get_interactive_by_clcodes(c_code, l_code)
@@ -221,18 +188,18 @@ def markov(df: pd.DataFrame, c_code, l_code):
     df2 = df2[df2['count']>1]
     
     df = df[df['user_uid'].isin(df2['user_uid'])]
-    df = df.drop(columns=['count'])
+    df = df.drop(columns=['count', 'c_code', 'l_code'])
     df = pd.concat([df, df.shift(-1).rename(columns={"user_uid": "user_uid_1", "worksheet_uid": "worksheet_uid_1", "time": "time_1"})], axis=1)
     df = df[(df["user_uid"]==df["user_uid_1"]) & (df["worksheet_uid"]!=df["worksheet_uid_1"]) & (df["time_1"]-df["time"]<pd.Timedelta(days=30))].reset_index(drop=True)
     # df.to_csv("ar.csv")
     df = df.drop(['user_uid_1', 'user_uid', 'time'], axis=1)
     df = df.groupby(by=['worksheet_uid', 'worksheet_uid_1'], group_keys=False).count().rename(columns={'time_1':'count'}).reset_index()
     
-    df = df.sort_values(by=['worksheet_uid', 'count'], ascending=[False,False]).groupby(by=['worksheet_uid'], group_keys=False)[['worksheet_uid_1']].apply(lambda g: list(g['worksheet_uid_1'])).to_frame()
+    df = df.sort_values(by=['worksheet_uid', 'count'], ascending=[False,False]).set_index('worksheet_uid')
     
     os.makedirs('MarkovModelParquets', exist_ok=True)
-    df.to_parquet(f"MarkovModelParquets/{c_code}-{l_code}.parquet")
-    # df.to_csv('ar-res.csv')
+    df.to_parquet(f"MarkovModelParquets/{l_code}.parquet")
+    # df[['user_uid', 'user_uid_1', 'worksheet_uid','worksheet_uid_1','time','time_1']].to_csv(f"MarkovModelParquets/{c_code}-{l_code}.csv")
     
 def popular_in_month(df, c_code, l_code):
     
@@ -262,11 +229,4 @@ def task(c_code, l_code, n):
     path = "top_by_country_files"
     os.makedirs(path, exist_ok=True)
     
-    top_n_df.to_parquet(f"{path}/{l_code}-{c_code}.parquet", index=False)
-    # cos_df.to_parquet(f'cos_sim_files/{l_code}-{c_code}.parquet', index=False)
-    # print(f"finished {l_code}-{c_code}")
-    
-# markov("IL", "he")
-# difference_in_mean("IL", "he")
-# task("IL", "he", 100)
-# interactive_user_similarity_analysis(pd.DataFrame(dbAPI.get_interactive_by_clcodes("", "he"), columns=['user_uid', 'worksheet_uid', 'c_code', 'l_code', 'time']), 5, "IL", "he")
+    top_n_df.to_parquet(f"{path}/{l_code}-{c_code}.parquet", index=True)

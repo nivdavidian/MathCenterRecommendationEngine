@@ -62,13 +62,13 @@ def get_cl_codes():
     
         
     
-@app.route("/api/getrecommendation")
+@app.route("/api/getrecommendation", methods=['POST'])
 def get_recommendation():
     try:
-        worksheet_uid = request.args.get("worksheet_uid")
-        c_code = request.args.get("cCode", "", type=str)
-        l_code = request.args.get("lCode", "", type=str)
-        rec = service.recommend(worksheet_uid, c_code=c_code, l_code=l_code)
+        uids = request.json["uid"]
+        c_code = request.json["cCode"]
+        l_code = request.json["lCode"]
+        rec = service.recommend(uids, c_code=c_code, l_code=l_code)
         return jsonify(rec)
     except Exception as e:
         logger.error(e)
@@ -83,8 +83,6 @@ def get_recommendation_user():
         c_code = request.json["cCode"]
         l_code = request.json["lCode"]
         rec = service.recommend_users_alike(already_watched, worksheet_uids, c_code=c_code, l_code=l_code)
-        rec = service.get_worksheets_info(rec, c_code, l_code)
-        rec = list(rec.values())
         return jsonify(rec)
     except Exception as e:
         logger.error(e)
@@ -103,9 +101,7 @@ def update_recommendations():
 def most_popular():
     try:
         populars = service.most_popular_in_month(**request.json)
-        res_info = service.get_worksheets_info(populars, request.json['cCode'], request.json['lCode'])
-        res_info = [res_info[uid] for uid in populars]
-        return jsonify(res_info)
+        return jsonify(populars)
     except Exception as e:
         logger.error(e)
         return abort(500, "Error")
@@ -129,6 +125,24 @@ def markov():
         logger.error(e)
         return abort(500, 'Error')
         
+@app.route('/api/recmodel', methods=['POST'])
+def recmodel():
+    try:
+        uids = request.json['uids']
+        c_code = request.json['cCode']
+        l_code = request.json['lCode']
+        n = 10 if 'n' not in request.json else request.json['n']
+        score_above = 0 if 'scoreAbove' not in request.json else request.json['scoreAbove']
+        grades = None if 'grade' not in request.json else request.json['grade']
+    except:
+        return abort(500, 'missing argument/s in body: uids, cCode, lCode. n is optional')
+    
+    try:
+        preds = service.predict_mixed(uids, c_code, l_code, n, score_above, grade=grades)
+        return jsonify(preds)
+    except Exception as e:
+        logger.error(e)
+        return abort(500, 'Error')
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

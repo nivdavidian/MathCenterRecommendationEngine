@@ -189,9 +189,8 @@ def get_page(search_string, l_code="he"):
 
 def get_recommendations_for_worksheet(worksheet_uid, l_code, c_code):
     df = pd.read_parquet(f"./top_by_country_files/{l_code}-{c_code}.parquet")
-    df.index = df["worksheet_uid"]
     
-    res = df.loc[worksheet_uid, "top_10"]
+    res = df.loc[worksheet_uid]
     return res
 
 def get_pages(worksheet_uids, l_code="he"):

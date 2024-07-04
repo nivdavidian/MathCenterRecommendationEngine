@@ -28,8 +28,13 @@ class AgeFilter(Filter):
         self.ages = options['ages']
     def filter(self, df):
         df = self.pre_process(df)
-        selected_rows = df.loc[:, self.ages].any(axis=1)
-        return df[selected_rows]
+        try:
+            selected_rows = df.loc[:, self.ages].any(axis=1)
+            return df[selected_rows]
+        except Exception as e:
+            from recServer import logger
+            logger.warning(f"warning in age filter: {e}")
+        return df
     def pre_process(self, df):
         df = super().pre_process(df)
         return df

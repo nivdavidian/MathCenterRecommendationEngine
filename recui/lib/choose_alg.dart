@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:recui/mixed_model.dart';
 import 'package:recui/user_similarity_page.dart';
 import 'package:recui/markov_page.dart';
 import 'package:recui/most_popular_page.dart';
@@ -14,21 +15,22 @@ class ChooseAlg extends StatelessWidget {
       ),
       body: Center(
         child: Column(children: [
-          TextButton(
-            style: ButtonStyle(
-              shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-              ),
-              foregroundColor: MaterialStateProperty.all<Color>(Colors.pink),
-            ),
-            onPressed: () {
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => const UserSimilarityPage()));
-            },
-            child: const Text('User Similarity'),
-          ),
+          // User Similarity Button
+          // TextButton(
+          //   style: ButtonStyle(
+          //     shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+          //       RoundedRectangleBorder(
+          //         borderRadius: BorderRadius.circular(20),
+          //       ),
+          //     ),
+          //     foregroundColor: MaterialStateProperty.all<Color>(Colors.pink),
+          //   ),
+          //   onPressed: () {
+          //     Navigator.push(context,
+          //         MaterialPageRoute(builder: (context) => const UserSimilarityPage()));
+          //   },
+          //   child: const Text('User Similarity'),
+          // ),
           TextButton(
             style: ButtonStyle(
               shape: MaterialStateProperty.all<RoundedRectangleBorder>(
@@ -55,9 +57,9 @@ class ChooseAlg extends StatelessWidget {
             ),
             onPressed: () {
               Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => const MarkovPage()));
+                  MaterialPageRoute(builder: (context) => const MixedPage()));
             },
-            child: const Text('Markov Model'),
+            child: const Text('Mixed Model'),
           ),
         ]),
       ),
