@@ -10,14 +10,14 @@ from models import MarkovModel, MostPopularModel, CosUserSimilarityModel, MixedM
 def recommend(uids, n=20, c_code="IL", l_code="he"):
     model = CosPageSimilarityModel(c_code, l_code)
     preds = model.predict(uids)
-    preds = preds[(np.argsort(preds, preds[:, 1])[::-1])]
+    preds = preds[np.argsort(preds[:, 1])[::-1]]
     infos = get_worksheets_info(preds[:, 0], c_code, l_code)
     return [infos[uid] for uid in preds[:, 0]]
 
 def recommend_users_alike(already_watched, worksheet_uids, c_code, l_code, **kwargs):
     model = CosUserSimilarityModel(c_code, l_code)
     preds = model.predict(worksheet_uids, already_watched=already_watched, n=kwargs.get('n',20))
-    preds = preds[(np.argsort(preds, preds[:, 1])[::-1])]
+    preds = preds[np.argsort(preds[:, 1])[::-1]]
     infos = get_worksheets_info(preds[:, 0], kwargs.get('cCode'), kwargs.get('lCode'))
     return [infos[uid] for uid in preds[:, 0]]
 
@@ -29,7 +29,7 @@ def update_files_recommendations(json):
 def most_popular_in_month(**kwargs):
     model = MostPopularModel(kwargs.get('cCode'), kwargs.get('lCode'))
     preds = model.predict(None, **kwargs)
-    preds = preds[(np.argsort(preds, preds[:, 1])[::-1])]
+    preds = preds[np.argsort(preds[:, 1])[::-1]]
     infos = get_worksheets_info(preds[:, 0], kwargs.get('cCode'), kwargs.get('lCode'))
     return [infos[uid] for uid in preds[:, 0]]
     
@@ -50,7 +50,7 @@ def predict_markov(worksheet_uid, c_code, l_code, n, **kwargs):
     model = MarkovModel(c_code, l_code, n)
     
     preds = model.predict(worksheet_uid, n=n, grade=kwargs.get('grade'))
-    preds = preds[(np.argsort(preds, preds[:, 1])[::-1])]
+    preds = preds[np.argsort(preds[:, 1])[::-1]]
     infos = get_worksheets_info(preds[:, 0], kwargs.get('cCode'), kwargs.get('lCode'))
     return [infos[uid] for uid in preds[:, 0]]
 
