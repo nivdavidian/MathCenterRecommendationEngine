@@ -31,6 +31,17 @@ def after_request(response):
 
 @app.route("/api/getpages")
 def get_pages():
+    """
+    Retrieve the names and UIDs of worksheets based on a specific language and country code.
+
+    Parameters:
+    term (str): The search term used to find similar titles.
+    cCode (str): The country code.
+    lCode (str): The language code.
+
+    Returns:
+    json: A list of dictionaries, each containing the UID of a worksheet as the key and a dictionary of worksheet details as the value.
+    """
     try:
         term = request.args.get("term", "", type=str)
         c_code = request.args.get("cCode", "", type=str)
@@ -47,6 +58,17 @@ def get_pages():
 
 @app.route("/api/getclcodes")
 def get_cl_codes():
+    """
+    Retrieve a list of unique country-language code pairs from the database.
+
+    This function queries the database for distinct country and language codes,
+    concatenates them into a single string separated by a hyphen (e.g., 'US-en'),
+    and returns them as a JSON array. If an error occurs during the process,
+    a 500 error is returned.
+
+    Returns:
+    json: A list of concatenated country-language code pairs.
+    """
     try:
         codes = dbAPI.get_distinct_cl_codes()
         
@@ -64,6 +86,17 @@ def get_cl_codes():
     
 @app.route("/api/getrecommendation", methods=['POST'])
 def get_recommendation():
+    """
+    Retrieve recommendations based on the Page Similarity algorithm.
+
+    Parameters:
+    uid (str): The UID of the worksheet used to find similar pages.
+    cCode (str): The country code.
+    lCode (str): The language code.
+
+    Returns:
+    json: A list of dictionaries, each containing the UID of a worksheet as the key and a dictionary of worksheet details as the value.
+    """
     try:
         uids = request.json["uid"]
         c_code = request.json["cCode"]
@@ -77,6 +110,23 @@ def get_recommendation():
         
 @app.route("/api/recuseralike", methods=["POST"])
 def get_recommendation_user():
+    """
+    Retrieve recommendations based on the User Similarity algorithm.
+
+    This function receives the list of already watched worksheets, worksheet UIDs,
+    country code, and language code from the request body. It uses these parameters
+    to generate recommendations based on the similarity of users' watching behavior.
+
+    Parameters:
+    already_watched (list): A list of UIDs representing worksheets that have already been watched.
+    worksheet_uids (list): A list of UIDs representing worksheets to consider for recommendations.
+    cCode (str): The country code.
+    lCode (str): The language code.
+
+    Returns:
+    json: A list of recommended worksheets, each represented by a dictionary containing
+          the UID of the worksheet and additional details.
+    """
     try:
         already_watched = request.json["already_watched"]
         worksheet_uids = request.json["worksheet_uids"]
@@ -90,6 +140,22 @@ def get_recommendation_user():
     
 @app.route('/api/updaterecommendations', methods=['POST'])
 def update_recommendations():
+    """
+    Update the parquet files used by the recommendation algorithms.
+
+    This function processes parameters received from the JSON body to update the parquet files
+    for various recommendation algorithms.
+
+    Parameters:
+    analyzers (list of str): List of the names of algorithms whose parquet files need updating. 
+                             Options: ['PagesSimilarity', 'UserSimilarity', 'MarkovModel', 'MostPopular']
+    cl_codes (list of list of str): List of country-language code pairs (cl_codes) to update the parquet files for, 
+                                    where each pair is represented as a list of two strings [country_code, language_code].
+    n (int): The number of similar pages to save in the PagesSimilarity parquet file for each worksheet UID.
+    step_size (int): The step size for segmenting user history; the segment size is twice the step_size.
+
+    Returns:
+    """
     try:
         service.update_files_recommendations(request.json)
         return make_response("OK", 200)
@@ -99,6 +165,21 @@ def update_recommendations():
 
 @app.route('/api/mostpopular', methods=['POST'])
 def most_popular():
+    """
+    Retrieve the most popular worksheets for a given month and age filter.
+
+    This function processes parameters received from the JSON body to fetch the most popular worksheets
+    based on the specified age and month filters.
+
+    Parameters (received in JSON body):
+    AgeFilter (list of str, optional): A list of grades to filter the worksheets by age group. 
+                                       Possible values: ['first', 'second', 'third', ..., 'eighth'].
+    MonthFilter (list of int, optional): A list of months (1-12) to filter the worksheets by popularity in specific months.
+
+    Returns:
+    json: A list of recommended worksheets, each represented by a dictionary containing
+          the UID of the worksheet and additional details.
+    """
     try:
         populars = service.most_popular_in_month(**request.json)
         return jsonify(populars)
@@ -108,6 +189,23 @@ def most_popular():
     
 @app.route('/api/markov', methods=['POST'])
 def markov():
+    """
+    Generate recommendations based on the Markov model algorithm.
+
+    This function receives parameters from the JSON body to generate recommendations using the Markov model.
+    It requires the UID of the worksheet, country code, and language code. Optionally, the number of recommendations
+    to return can be specified.
+
+    Parameters (received in JSON body):
+    uid (str): The UID of the worksheet for which recommendations are to be generated.
+    cCode (str): The country code.
+    lCode (str): The language code.
+    n (int, optional): The number of recommendations to return. Default is 10.
+
+    Returns:
+    json: A list of recommended worksheets, each represented by a dictionary containing
+          the UID of the worksheet and additional details.
+    """
     try:
         worksheet_uid = request.json['uid']
         c_code = request.json['cCode']
@@ -127,6 +225,25 @@ def markov():
         
 @app.route('/api/recmodel', methods=['POST'])
 def recmodel():
+    """
+    Generate recommendations using a mixed model algorithm.
+
+    This function combines multiple recommendation algorithms to generate better recommendations.
+    It requires the UIDs of the user's history, country code, and language code. Optionally, the number of 
+    recommendations, a score threshold, and grade filter can be specified.
+
+    Parameters (received in JSON body):
+    uids (list of str): The UIDs of the user's history.
+    cCode (str): The country code.
+    lCode (str): The language code.
+    n (int, optional): The number of recommendations to return. Default is 10.
+    scoreAbove (float, optional): The score threshold for filtering recommendations. Default is 0.
+    grade (list of str, optional): A list of grades to filter recommendations.
+
+    Returns:
+    json: A list of recommended worksheets, each represented by a dictionary containing
+          the UID of the worksheet and additional details.
+    """
     try:
         uids = request.json['uids']
         c_code = request.json['cCode']
