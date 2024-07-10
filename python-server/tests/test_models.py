@@ -63,7 +63,7 @@ class TestIsListOfStrings(unittest.TestCase):
             
             import time
             t = time.time()
-            predictions = [list(mixed_model.predict(x).index) for x in test_X]
+            predictions = [list(mixed_model.predict(x, markov_per=1, ps_per=0.1, mp_per=0.05, us_per=0.3).index) for x in test_X]
             print(time.time() - t)
             score = 0
             for i, p in enumerate(predictions):

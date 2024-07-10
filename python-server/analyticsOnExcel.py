@@ -6,6 +6,7 @@ import os
 
 from enum import Enum
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.decomposition import TruncatedSVD
 
 class Grade(Enum):
     prek = 0
@@ -169,8 +170,13 @@ def calculate_cos_sim_by_country(c_code, l_code):
     # Step 8: Set the worksheet UID as the index
     df = df.set_index('worksheet_uid')
     
+    # Apply SVD
+    n_components = 10  # Adjust based on your requirements
+    svd = TruncatedSVD(n_components=n_components)
+    reduced_data = svd.fit_transform(df.values)
+    
     # Step 9: Calculate the cosine similarity between the worksheets
-    cos_sim = cosine_similarity(df.values)
+    cos_sim = cosine_similarity(reduced_data)
     
     # Step 10: Create a DataFrame for the cosine similarity scores
     cos_sim_df = pd.DataFrame(cos_sim, index=df.index, columns=df.index)
@@ -200,9 +206,10 @@ def top_n_cos_sim(df: pd.DataFrame, n):
         lambda row: json.dumps(
             list(
                 # Select similarity scores excluding self-similarity and those below 0.4
-                row.loc[(row.index != row.name) & (row >= 0.4)]
+                row.loc[(row.index != row.name) & (row >= 0.5)]
                 # Sort the similarity scores in descending order
                 .sort_values(ascending=False)
+                # .head(100)
                 # Convert the selected scores to a list of tuples
                 .items()
             )

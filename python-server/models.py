@@ -6,7 +6,7 @@ from analyticsOnExcel import interactive_user_similarity_analysis, markov, popul
 from sklearn.metrics.pairwise import cosine_similarity
 
 from filter_manager import FilterFactory
-from functools import reduce
+from sklearn.preprocessing import normalize
 
 
 class MyModel:    
@@ -129,7 +129,7 @@ class CosPageSimilarityModel(MyModel):
         np.ndarray: An array of pairs containing worksheet UIDs and their respective similarity scores.
         """
         # Load the Parquet file containing the top recommendations by worksheet UID
-        df = pd.read_parquet(f'top_by_country_files/{self.l_code}-{self.c_code}.parquet')
+        df = pd.read_parquet(f'top_by_country_files/{self.l_code}-{self.c_code}.parquet', filters=[('worksheet_uid', '==', data[-1])])
         
         # Extract the top recommendations for the last worksheet UID in the data
         top_recs = json.loads(df.loc[data[-1], 'top_10'])
@@ -185,21 +185,15 @@ class MarkovModel(MyModel):
         last_page = data[-1]
         
         # Reading Markov model results from the Parquet file for the given language code
-        df = pd.read_parquet(f"MarkovModelParquets/{self.l_code}.parquet")
+        df = pd.read_parquet(f"MarkovModelParquets/{self.l_code}.parquet", filters=[('worksheet_uid', '==', last_page)])
         
-        try:
-            # Get the recommendations for the last page
-            res = df.loc[last_page]
-        except KeyError:
-            # Return an array of -1 if the last page is not found in the Markov model results
+        if df.empty:
             return np.full((1, 2), -1)
-        
         # Reshape the results to ensure they are in the correct format
-        res = np.reshape(res, (-1, 2))
+        res = np.reshape(df, (-1, 2))
         
         # Normalize the scores
-        max_score = res[:, 1].max() + 1
-        res[:, 1] = res[:, 1] / max_score
+        res[:, 1] = normalize(np.reshape(res[:, 1], (1,-1))).flatten()
         
         return res
     
@@ -307,12 +301,8 @@ class MostPopularModel(MyModel):
         # Convert the DataFrame to a numpy array and reshape it to have pairs of worksheet UIDs and counts.
         df: np.ndarray = np.reshape(df[['worksheet_uid', 'count']].head(N).to_numpy(), (-1, 2))
 
-        # Get the maximum count and add 1 to avoid division by zero.
-        max_count = df[:, 1].max() + 1
-
         # Normalize the counts by dividing them by the maximum count.
-        df[:, 1] = df[:, 1] / max_count
-
+        df[:,1] = normalize(np.reshape(df[:, 1], (1,-1))).flatten()
         # Return the array of top recommendations.
         return df
     
@@ -362,7 +352,7 @@ class MixedModel(MyModel):
         pd.DataFrame: A DataFrame containing the top recommendations with their combined scores.
         """
         # Define the weights for each model's scores
-        markov_per, us_per, mp_per, ps_per = 0.25, 0.25, 0.25, 0.25
+        markov_per, us_per, mp_per, ps_per = kwargs.get('markov_per', 0.32), kwargs.get('us_per', 0.32), kwargs.get('mp_per', 0.05), kwargs.get('ps_per', 0.32)
         
         # Initialize the Markov model and get its recommendations
         markov_model = MarkovModel(self.c_code, self.l_code, self.N)
@@ -409,6 +399,19 @@ class MixedModel(MyModel):
         res = res.head(kwargs.get('n', 10))
         
         return res
+
+class TCNRecommender(MyModel):
+    def __init__(self, c_code, l_code) -> None:
+        super().__init__(c_code, l_code)
         
+    def predict(self, data, **kwargs):
+        pass
+    
+    def fit(self, **kwargs):
+        data = kwargs.get('data')
+        if data is None or not isinstance(data, pd.DataFrame):
+            raise Exception("Must send 'data' in kwargs")
+        
+
         
         
