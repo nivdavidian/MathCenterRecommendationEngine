@@ -347,17 +347,17 @@ class MixedPageSheetInfo extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             SelectableText(
-              'Markov Score: ${page.markovScore/0.32}',
+              'Markov Score: ${page.markovScore/0.4}',
               style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 8),
             SelectableText(
-              'User Similarity Score: ${page.userSimilarityScore/0.32}',
+              'User Similarity Score: ${page.userSimilarityScore/0.3}',
               style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 8),
             SelectableText(
-              'Page Similarity Score: ${page.pageSimilarityScore/0.32}',
+              'Page Similarity Score: ${page.pageSimilarityScore/0.25}',
               style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 8),

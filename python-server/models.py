@@ -352,7 +352,7 @@ class MixedModel(MyModel):
         pd.DataFrame: A DataFrame containing the top recommendations with their combined scores.
         """
         # Define the weights for each model's scores
-        markov_per, us_per, mp_per, ps_per = kwargs.get('markov_per', 0.32), kwargs.get('us_per', 0.32), kwargs.get('mp_per', 0.05), kwargs.get('ps_per', 0.32)
+        markov_per, us_per, mp_per, ps_per = kwargs.get('markov_per', 0.4), kwargs.get('us_per', 0.3), kwargs.get('mp_per', 0.05), kwargs.get('ps_per', 0.25)
         
         # Initialize the Markov model and get its recommendations
         markov_model = MarkovModel(self.c_code, self.l_code, self.N)
