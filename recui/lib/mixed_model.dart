@@ -397,7 +397,6 @@ class _MixedRecommendationPageState extends State<MixedRecommendationPage> {
       // "n": 10,
     });
 
-    print(body);
     var headers = {"Content-Type": "application/json"};
     var response = await http.post(url, body: body, headers: headers);
     var data = List<dynamic>.empty(growable: true);
