@@ -45,6 +45,12 @@ class UsersSimilarityAnalyzer(Analyzer):
     
     def analyze(self):
         data = pd.DataFrame(dbAPI.get_interactive_by_clcodes(self.model.c_code,self.model.l_code), columns=['user_uid', 'worksheet_uid', 'l_code', 'c_code', 'time'])
+        
+        from analyticsOnExcel import analyze_downloads
+        data2 = analyze_downloads(c_code=None, l_code=self.model.l_code)
+        
+        data = pd.concat([data, data2])
+        
         self.model.fit(data=data, step_size=self.step_size)
         from recServer import logger
         logger.info(f'Finished update recommendation of User Similarity in {self.model.l_code}')
@@ -56,7 +62,14 @@ class MostPopular(Analyzer):
         super().__init__()
         self.model = MostPopularModel(kwargs.get('c_code'), kwargs.get('l_code'))
     def analyze(self):
-        self.model.fit(data=pd.DataFrame(dbAPI.get_interactive_by_clcodes(self.model.c_code, self.model.l_code), columns=["user_uid", "worksheet_uid", "l_code", "c_code", "time"]))
+        
+        data = pd.DataFrame(dbAPI.get_interactive_by_clcodes(self.model.c_code, self.model.l_code), columns=["user_uid", "worksheet_uid", "l_code", "c_code", "time"])
+        
+        from analyticsOnExcel import analyze_downloads
+        data2 = analyze_downloads(c_code=None, l_code=self.model.l_code)
+        
+        data = pd.concat([data, data2])
+        self.model.fit(data=data)
         from recServer import logger
         logger.info(f'Finished update recommendation of Most Popular in {self.model.c_code}-{self.model.l_code}')
     def run(self):
@@ -67,7 +80,15 @@ class MarkovAnalyzer(Analyzer):
         super().__init__()
         self.model = MarkovModel(kwargs.get('c_code'),kwargs.get('l_code'), kwargs.get('n', 20))
     def analyze(self):
-        self.model.fit(data=pd.DataFrame(dbAPI.get_interactive_by_clcodes(self.model.c_code, self.model.l_code), columns=['user_uid', 'worksheet_uid', 'c_code', 'l_code', 'time']))
+        data = pd.DataFrame(dbAPI.get_interactive_by_clcodes(self.model.c_code, self.model.l_code), columns=['user_uid', 'worksheet_uid', 'c_code', 'l_code', 'time'])
+        
+        from analyticsOnExcel import analyze_downloads
+        data2 = analyze_downloads(c_code=None, l_code=self.model.l_code)
+        
+        data = pd.concat([data, data2])
+        
+        self.model.fit(data=data)
+        
         from recServer import logger
         logger.info(f'Finished update recommendation of Markov Model in {self.model.l_code}')
     def run(self):
@@ -87,7 +108,7 @@ class AnalyzerFactory(AbstractFactory):
         if 'analyzers' not in kwargs or len(kwargs.get('analyzers')) == 0:
             raise('\'analyzers\' missing')
         
-        cl_codes = list(set(map(lambda x: x[1], dbAPI.get_distinct_cl_codes())))
+        cl_codes = list(map(lambda x: list(x), dbAPI.get_distinct_cl_codes()))
         options.update(kwargs.get('global_options', {}))
         
         analyzers = []
@@ -101,14 +122,14 @@ class AnalyzerFactory(AbstractFactory):
             # if len(list(filter(lambda x: x not in cl_codes, options_copy['cl_codes']))) > 0:
             #     raise Exception("some cl_codes are invalid")
             if name == "PagesSimilarity":
-                analyzers.extend([PagesSimilarityAnalyzer(c_code=cl_code[0], l_code=cl_code[1], n=options_copy['n']) for cl_code in list(map(lambda x: list(x), dbAPI.get_distinct_cl_codes()))])
+                analyzers.extend([PagesSimilarityAnalyzer(c_code=cl_code[0], l_code=cl_code[1], n=options_copy['n']) for cl_code in options_copy['cl_codes']])
             elif name == "UserSimilarity":
                 step_size = int(options_copy.get("step_size"))
-                analyzers.extend([UsersSimilarityAnalyzer(step_size=step_size, c_code=None, l_code=cl_code) for cl_code in options_copy['cl_codes']])
+                analyzers.extend([UsersSimilarityAnalyzer(step_size=step_size, c_code=None, l_code=cl_code) for cl_code in set(map(lambda x: x[1], options_copy['cl_codes']))])
             elif name == "MostPopular":
-                analyzers.extend([MostPopular(c_code=cl_code[0], l_code=cl_code[1]) for cl_code in list(map(lambda x: list(x), dbAPI.get_distinct_cl_codes()))])
+                analyzers.extend([MostPopular(c_code=cl_code[0], l_code=cl_code[1]) for cl_code in options_copy['cl_codes']])
             elif name == "MarkovModel":
-                analyzers.extend([MarkovAnalyzer(c_code=None, l_code=cl_code) for cl_code in options_copy['cl_codes']])
+                analyzers.extend([MarkovAnalyzer(c_code=None, l_code=cl_code) for cl_code in set(map(lambda x: x[1], options_copy['cl_codes']))])
             else:
                 raise Exception(f"Analyzing job named, {name} does not exist")
         

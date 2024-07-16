@@ -65,7 +65,7 @@ pd.set_option('display.max_rows', None)
 pd.set_option('display.max_columns', None)
 
 
-def analyze_downloads():
+def analyze_downloads(c_code, l_code):
     """
     Analyze and process user download data.
 
@@ -87,42 +87,48 @@ def analyze_downloads():
     """
     
     # Step 1: Retrieve user download data from the database
-    res = dbAPI.get_all_user_downloads()
+    res = dbAPI.get_all_user_downloads(None, l_code)
     
     # Step 2: Create a DataFrame with the retrieved data
-    df3 = pd.DataFrame(res, columns=["user_uid", "country_code", "language_code", "downloads"])
+    df3 = pd.DataFrame(res, columns=["user_uid", "c_code", "l_code", "downloads"])
+    
+    df3['user_uid'] = df3['user_uid'].apply(str)
     
     # Step 3: Parse the downloads column to extract individual download records
-    df3["downloads"] = df3["downloads"].apply(lambda x: list(json.loads(x[1:-1])))
+    df3["downloads"] = df3["downloads"].apply(lambda x: json.loads(f"{x[:2]}\"{x[2:-1]}"))
     
     # Step 4: Explode the downloads column to create a row for each download record
     df3 = df3.explode("downloads").reset_index(drop=True)
     
     # Step 5: Extract worksheet UID and download timestamp from each record
     df3["worksheet_uid"] = df3["downloads"].apply(lambda x: x["pageUid"])
-    df3["downloads"] = pd.to_datetime(df3["downloads"].apply(lambda x: x["time"]), utc=True)
+    df3["time"] = df3["downloads"].apply(lambda x: x["time"])
     
     # Step 6: Remove duplicate rows based on user UID and worksheet UID
-    rows_to_remove = []
-    for index, row in df3.iterrows():
-        if index + 1 < len(df3):
-            next_row = df3.iloc[index + 1]
-            if row['user_uid'] == next_row['user_uid'] and row['worksheet_uid'] == next_row['worksheet_uid']:
-                rows_to_remove.append(index)
+    # rows_to_remove = []
+    # for index, row in df3.iterrows():
+    #     if index + 1 < len(df3):
+    #         next_row = df3.iloc[index + 1]
+    #         if row['user_uid'] == next_row['user_uid'] and row['worksheet_uid'] == next_row['worksheet_uid']:
+    #             rows_to_remove.append(index)
     
-    df3 = df3.drop(rows_to_remove).reset_index(drop=True)
+    # df3 = df3.drop(rows_to_remove).reset_index(drop=True)
     
     # Step 7: Extract year, month, and day from the download timestamp
-    df3["year"] = df3["downloads"].dt.year
-    df3["month"] = df3["downloads"].dt.month
-    df3["day"] = df3["downloads"].dt.day
+    # df3["year"] = df3["downloads"].dt.year
+    # df3["month"] = df3["downloads"].dt.month
+    # df3["day"] = df3["downloads"].dt.day
     
     # Step 8: Drop unnecessary columns
-    df3 = df3.drop(columns=['downloads', 'user_uid', 'day', 'year'])
+    # df3 = df3.drop(columns=['downloads', 'user_uid', 'day', 'year'])
+    
+    df3 = df3.drop(columns=['downloads'])
     
     # Step 9: Retain only relevant columns and remove duplicate rows
-    df3 = df3[["country_code", "language_code", "worksheet_uid", "month"]]
-    df3 = df3.drop_duplicates()
+    df3 = df3[["user_uid", "c_code", "l_code", "worksheet_uid", "time"]]
+    df3 = df3.drop_duplicates().reset_index(drop=True)
+    
+    df3 = df3[df3["worksheet_uid"]!= 'undefined']
     
     return df3
 
@@ -171,7 +177,7 @@ def calculate_cos_sim_by_country(c_code, l_code):
     df = df.set_index('worksheet_uid')
     
     # Apply SVD
-    n_components = 10  # Adjust based on your requirements
+    n_components = 40  # Adjust based on your requirements
     svd = TruncatedSVD(n_components=n_components)
     reduced_data = svd.fit_transform(df.values)
     
@@ -209,7 +215,7 @@ def top_n_cos_sim(df: pd.DataFrame, n):
                 row.loc[(row.index != row.name) & (row >= 0.5)]
                 # Sort the similarity scores in descending order
                 .sort_values(ascending=False)
-                # .head(100)
+                .head(50)
                 # Convert the selected scores to a list of tuples
                 .items()
             )
@@ -247,7 +253,8 @@ def interactive_user_similarity_analysis(data: pd.DataFrame, step, c_code, l_cod
     data = data.drop_duplicates().reset_index(drop=True)
     
     # Convert the 'time' column to datetime format
-    data["time"] = pd.to_datetime(data["time"], format="%Y-%m-%d %H:%M:%S")
+    data["time"] = pd.to_datetime(data["time"], utc=True, format="mixed")
+    
     
     # Sort the data by 'user_uid' in descending order and 'time' in ascending order
     data = data.sort_values(by=['user_uid', 'time'], ascending=[False, True])
@@ -328,7 +335,7 @@ def markov(df: pd.DataFrame, c_code, l_code):
     df = df.drop_duplicates().reset_index(drop=True)
     
     # Step 2: Convert the 'time' column to datetime format
-    df["time"] = pd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
+    df["time"] = pd.to_datetime(df["time"], utc=True, format="mixed")
     
     # Step 3: Sort the data by 'user_uid' and 'time'
     df = df.sort_values(by=['user_uid', 'time'], ascending=[True, True])
@@ -388,7 +395,7 @@ def popular_in_month(df, c_code, l_code):
     df = df.drop_duplicates().reset_index(drop=True)
     
     # Step 2: Extract the month from the 'time' column
-    df["month"] = pd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S").apply(lambda x: x.month)
+    df["month"] = pd.to_datetime(df["time"], utc=True, format="mixed").apply(lambda x: x.month)
     
     # Step 3: Drop unnecessary columns
     df = df.drop(columns=["c_code", "l_code", "user_uid", "time"])

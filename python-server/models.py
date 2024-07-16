@@ -132,7 +132,10 @@ class CosPageSimilarityModel(MyModel):
         df = pd.read_parquet(f'top_by_country_files/{self.l_code}-{self.c_code}.parquet', filters=[('worksheet_uid', '==', data[-1])])
         
         # Extract the top recommendations for the last worksheet UID in the data
-        top_recs = json.loads(df.loc[data[-1], 'top_10'])
+        try:
+            top_recs = json.loads(df.loc[data[-1], 'top_10'])
+        except KeyError:
+            return np.reshape(np.array([]), (-1,2))
         
         # Reshape the recommendations into a numpy array
         top_recs_array = np.reshape(np.array(top_recs), (-1, 2))
@@ -188,7 +191,7 @@ class MarkovModel(MyModel):
         df = pd.read_parquet(f"MarkovModelParquets/{self.l_code}.parquet", filters=[('worksheet_uid', '==', last_page)])
         
         if df.empty:
-            return np.full((1, 2), -1)
+            return np.reshape(np.array([]), (-1,2))
         # Reshape the results to ensure they are in the correct format
         res = np.reshape(df, (-1, 2))
         
@@ -396,7 +399,7 @@ class MixedModel(MyModel):
         res = res[res['score'] > kwargs.get('score_above', 0)]
         
         # Select the top N recommendations
-        res = res.head(kwargs.get('n', 10))
+        res = res.head(self.N)
         
         return res
 

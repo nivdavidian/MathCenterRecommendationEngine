@@ -248,14 +248,19 @@ def recmodel():
         uids = request.json['uids']
         c_code = request.json['cCode']
         l_code = request.json['lCode']
-        n = 10 if 'n' not in request.json else request.json['n']
-        score_above = 0 if 'scoreAbove' not in request.json else request.json['scoreAbove']
+        n = 10 if 'n' not in request.json else int(request.json['n'])
+        score_above = 0 if 'scoreAbove' not in request.json else float(request.json['scoreAbove'])
         grades = None if 'grade' not in request.json else request.json['grade']
+        markov_score = 0.4 if 'markov_score' not in request.json else float(request.json['markov_score'])
+        us_score = 0.3 if 'us_score' not in request.json else float(request.json['us_score'])
+        ps_score = 0.4 if 'ps_score' not in request.json else float(request.json['ps_score'])
+        mp_score = 0.4 if 'mp_score' not in request.json else float(request.json['mp_score'])
     except:
         return abort(500, 'missing argument/s in body: uids, cCode, lCode. n is optional')
     
     try:
-        preds = service.predict_mixed(uids, c_code, l_code, n, score_above, grade=grades)
+        preds = service.predict_mixed(uids, c_code, l_code, n, score_above=score_above, grade=grades,
+                                      markov_per=markov_score, us_per=us_score, ps_per=ps_score, mp_per=mp_score)
         return jsonify(preds)
     except Exception as e:
         logger.error(e)

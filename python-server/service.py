@@ -197,7 +197,7 @@ def predict_markov(worksheet_uid, c_code, l_code, n, **kwargs):
     return [infos[uid] for uid in preds[:, 0]]
 
 
-def predict_mixed(uids, c_code, l_code, n, score_above, **kwargs):
+def predict_mixed(uids, c_code, l_code, n, **kwargs):
     """
     Generate recommendations using a mixed model algorithm.
 
@@ -222,7 +222,7 @@ def predict_mixed(uids, c_code, l_code, n, score_above, **kwargs):
     model = MixedModel(c_code, l_code, n)
     
     # Predict recommendations based on the user's history and additional filters
-    preds_df = model.predict(uids, n=n, grade=kwargs.get('grade'), score_above=score_above)
+    preds_df = model.predict(uids, **kwargs)
     
     # If no predictions are returned, return an empty list
     if preds_df.empty:

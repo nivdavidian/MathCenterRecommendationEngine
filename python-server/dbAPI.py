@@ -65,11 +65,11 @@ def get_pages_by_topics(topics):
         cursor.close()
         sql_pool.release_connection(conn)
         
-def get_all_user_downloads():
+def get_all_user_downloads(c_code, l_code):
     try:
         conn = sql_pool.get_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM user_downloads")
+        cursor.execute("SELECT * FROM user_downloads WHERE language_code=%s", (l_code,))
         res = cursor.fetchall()
         return res
     except Exception as e:
