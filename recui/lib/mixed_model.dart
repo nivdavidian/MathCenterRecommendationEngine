@@ -14,6 +14,18 @@ class MixedPage extends StatefulWidget {
 }
 
 class _MixedPageState extends State<MixedPage> {
+  var _us_score_controller = TextEditingController();
+  var us_score = 0.3;
+
+  var _markov_score_controller = TextEditingController();
+  var markov_score = 0.4;
+
+  var _ps_score_controller = TextEditingController();
+  var ps_score = 0.25;
+
+  var _mp_score_controller = TextEditingController();
+  var mp_score = 0.05;
+
   var isLoading = false;
 
   var clCodes = List<String>.empty(growable: true);
@@ -25,6 +37,18 @@ class _MixedPageState extends State<MixedPage> {
   @override
   void initState() {
     super.initState();
+
+    _us_score_controller = TextEditingController();
+    _us_score_controller.text = us_score.toString();
+
+    _markov_score_controller = TextEditingController();
+    _markov_score_controller.text = markov_score.toString();
+
+    _ps_score_controller = TextEditingController();
+    _ps_score_controller.text = ps_score.toString();
+
+    _mp_score_controller = TextEditingController();
+    _mp_score_controller.text = mp_score.toString();
     getClCodes();
   }
 
@@ -73,6 +97,79 @@ class _MixedPageState extends State<MixedPage> {
               ],
             ),
           ),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                Container(
+                  width: 200,
+                  height: 70,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: TextField(
+                      controller: _us_score_controller,
+                      decoration: const InputDecoration(
+                          hintText: "UserSimilarity Score",
+                          labelText: "UserSimilarity Score"),
+                      onChanged: (value) {
+                        us_score = double.parse(value);
+                      },
+                    ),
+                  ),
+                ),
+                Container(
+                  width: 200,
+                  height: 70,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: TextField(
+                      controller: _markov_score_controller,
+                      decoration: const InputDecoration(
+                        hintText: "Markov Score",
+                        labelText: "Markov Score",
+                      ),
+                      onChanged: (value) {
+                        markov_score = double.parse(value);
+                      },
+                    ),
+                  ),
+                ),
+                Container(
+                  width: 200,
+                  height: 70,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: TextField(
+                      controller: _ps_score_controller,
+                      decoration: const InputDecoration(
+                        hintText: "PageSimilarity Score",
+                        labelText: "PageSimilarity Score",
+                      ),
+                      onChanged: (value) {
+                        ps_score = double.parse(value);
+                      },
+                    ),
+                  ),
+                ),
+                Container(
+                  width: 200,
+                  height: 70,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: TextField(
+                      controller: _mp_score_controller,
+                      decoration: const InputDecoration(
+                          hintText: "MostPopular Score",
+                          labelText: "MostPopular Score"),
+                      onChanged: (value) {
+                        mp_score = double.parse(value);
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
           SearchBar(
             hintText: 'Search for page in Math-Center',
             onSubmitted: (value) {
@@ -101,9 +198,12 @@ class _MixedPageState extends State<MixedPage> {
                                     MaterialPageRoute(
                                         builder: (context) =>
                                             MixedRecommendationPage(
-                                              page: pages[index],
-                                              clCode: selectedClCode,
-                                            )));
+                                                page: pages[index],
+                                                clCode: selectedClCode,
+                                                markovScore: markov_score,
+                                                usScore: us_score,
+                                                psScore: ps_score,
+                                                mpScore: mp_score)));
                               },
                               onLongPress: () {
                                 showModalBottomSheet(
@@ -163,10 +263,19 @@ class _MixedPageState extends State<MixedPage> {
 
 class MixedRecommendationPage extends StatefulWidget {
   const MixedRecommendationPage(
-      {super.key, required this.page, required this.clCode});
+      {super.key,
+      required this.page,
+      required this.clCode,
+      required this.markovScore,
+      required this.usScore,
+      required this.psScore,
+      required this.mpScore});
   final MathCenterPage page;
   final String clCode;
-
+  final double markovScore;
+  final double usScore;
+  final double psScore;
+  final double mpScore;
   @override
   State<MixedRecommendationPage> createState() =>
       _MixedRecommendationPageState();
@@ -247,7 +356,12 @@ class _MixedRecommendationPageState extends State<MixedRecommendationPage> {
                                         context: context,
                                         builder: (context) =>
                                             MixedPageSheetInfo(
-                                                page: recommendations[index]));
+                                              page: recommendations[index],
+                                              markovScore: widget.markovScore,
+                                              usScore: widget.usScore,
+                                              psScore: widget.psScore,
+                                              mpScore: widget.mpScore,
+                                            ));
                                   },
                                 ),
                               )),
@@ -276,8 +390,14 @@ class _MixedRecommendationPageState extends State<MixedRecommendationPage> {
         gradesMap[widget.page.minGrade],
         gradesMap[widget.page.maxGrade]
       ],
+      "markov_score": widget.markovScore,
+      "us_score": widget.usScore,
+      "ps_score": widget.psScore,
+      "mp_score": widget.mpScore,
       // "n": 10,
     });
+
+    print(body);
     var headers = {"Content-Type": "application/json"};
     var response = await http.post(url, body: body, headers: headers);
     var data = List<dynamic>.empty(growable: true);
@@ -299,12 +419,20 @@ class _MixedRecommendationPageState extends State<MixedRecommendationPage> {
 }
 
 class MixedPageSheetInfo extends StatelessWidget {
-  const MixedPageSheetInfo({
-    super.key,
-    required this.page,
-  });
+  const MixedPageSheetInfo(
+      {super.key,
+      required this.page,
+      required this.markovScore,
+      required this.usScore,
+      required this.psScore,
+      required this.mpScore});
 
   final MixedRecMathCenterPage page;
+
+  final double markovScore;
+  final double usScore;
+  final double psScore;
+  final double mpScore;
 
   @override
   Widget build(BuildContext context) {
@@ -347,22 +475,22 @@ class MixedPageSheetInfo extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             SelectableText(
-              'Markov Score: ${page.markovScore/0.4}',
+              'Markov Score: ${page.markovScore / markovScore}',
               style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 8),
             SelectableText(
-              'User Similarity Score: ${page.userSimilarityScore/0.3}',
+              'User Similarity Score: ${page.userSimilarityScore / usScore}',
               style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 8),
             SelectableText(
-              'Page Similarity Score: ${page.pageSimilarityScore/0.25}',
+              'Page Similarity Score: ${page.pageSimilarityScore / psScore}',
               style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 8),
             SelectableText(
-              'Most Popular Score: ${page.mostPopularScore/0.05}',
+              'Most Popular Score: ${page.mostPopularScore / mpScore}',
               style: const TextStyle(fontSize: 16),
             ),
           ],
